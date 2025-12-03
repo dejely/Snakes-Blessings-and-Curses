@@ -1,6 +1,6 @@
 package game.exceptions;
 
-/**
+/*
  * Thrown when a player is affected by a snake tile
  * or snake-related hazard on the board.
  */
