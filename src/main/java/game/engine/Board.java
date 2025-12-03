@@ -71,7 +71,7 @@ public class Board {
             
             // Climb logic, must be higher than current, but not higher than size-1
             int maxClimb = size - 2; 
-            int climbTo = random.nextInt(maxClimb - index) + index + 1;
+            int climbTo = (maxClimb > index) ? random.nextInt(maxClimb - index) + index + 1 : size - 1;
             
             // Assuming you create a LadderTile class similar to SnakeTile
             tiles.set(index, new LadderTile(index, climbTo));
