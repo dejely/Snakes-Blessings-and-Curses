@@ -8,7 +8,7 @@ package game.exceptions;
 public class OutofBoundsException extends Exception{
 
 	public OutofBoundsException() {
-		
+	
 		public OutOfBoundsException() {
         	super("Move goes out of the board's bounds.");
 		}

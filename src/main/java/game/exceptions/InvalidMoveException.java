@@ -8,6 +8,7 @@ package game.exceptions;
 public class InvalidMoveException {
 
 	public InvalidMoveException() {
+		
 		public InvalidMoveException() {
 			super("Invalid move attempted.");
 		}
