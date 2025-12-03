@@ -4,6 +4,8 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class Dice {
+	
+	private static Player player;
     static Scanner sc = new Scanner(System.in);
     public static void main(String[] args) {
         int roll = DiceRollRNG();
@@ -14,12 +16,12 @@ public class Dice {
     public static int DiceRollRNG() {
         Random rand = new Random();
         int roll = rand.nextInt(6) + 1; // 1–6
-        roll = CheckProperties(roll);
+        
+		roll = CheckProperties(roll, player);
         return roll;
     }
 
-    public static int CheckProperties(int roll) {     // player effects
-        Player player = new Player();
+    public static int CheckProperties(int roll, Player player) {     // player effects
 
         if (player.hasWhatAreTheOdds) { // What Are The Odds?
             if (roll % 2 == 0) {
