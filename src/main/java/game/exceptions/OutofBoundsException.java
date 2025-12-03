@@ -1,6 +1,6 @@
 package game.exceptions;
 
-/**
+/*
  * Thrown when a move or operation attempts to place
  * a player outside the valid bounds of the board. eg 101, 0, -1, etc.
  */
