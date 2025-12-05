@@ -3,10 +3,12 @@
  */
 package game.ui;
 
+import javax.swing.JPanel;
+
 /**
  * 
  */
-public class ControlsPanel {
+public class ControlsPanel extends JPanel{
 
 	/**
 	 * 
