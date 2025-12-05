@@ -39,6 +39,11 @@ public class Game {
 	
 	public void gameLoop() {
 		//TODO: Code Block here
+		
+		if (isGameOver() == true) {
+			Dice.sc.close();
+			System.exit(0);
+		}
 	}
 	
 	public void processTurn(Player player) {
@@ -52,9 +57,8 @@ public class Game {
 		
 	}
 	
-	public boolean isGameOver() {
+	public static boolean isGameOver() {
 		//TODO: Code Block here
-		
 		
 		return false;
 	}

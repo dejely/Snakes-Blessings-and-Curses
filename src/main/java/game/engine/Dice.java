@@ -17,11 +17,13 @@ public class Dice {
         Random rand = new Random();
         int roll = rand.nextInt(6) + 1; // 1–6
         
-		roll = CheckProperties(roll, player);
+		roll = player  != null ? CheckProperties(roll, player) : roll; //If player innit null, run condition
         return roll;
     }
 
     public static int CheckProperties(int roll, Player player) {     // player effects
+    	
+    	if (player == null) return roll; //returns if player is null
 
         if (player.hasWhatAreTheOdds) { // What Are The Odds?
             if (roll % 2 == 0) {
