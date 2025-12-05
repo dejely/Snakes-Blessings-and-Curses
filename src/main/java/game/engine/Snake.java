@@ -16,7 +16,7 @@ public class Snake extends Tile {
 	@Override
 	public void applyEffect(Player player) {
 		System.out.println("Snake! Slide down from " + getIndex() + " to " + dropTo); // message subject to change
-        player.setPosition(dropTo); // placeholder for player class method
+        player.setPosition(dropTo);
 	}
 
 }
