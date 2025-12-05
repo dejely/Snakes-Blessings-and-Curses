@@ -3,13 +3,9 @@
  */
 package game.ui;
 
-import java.awt.BorderLayout;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 /**
@@ -44,7 +40,7 @@ public class ControlsPanel extends JPanel{
         add(new JButton("Hello"));
         add(new JButton("Start"));
         add(new JButton("Reset"));
-        add(new JButton("Exit"));
+        JButton _Exit = new JButton("Exit");
 
 		
 	}

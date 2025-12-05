@@ -2,9 +2,9 @@ package game.engine;
 
 public class Player {
 	
-    boolean hasWhatAreTheOdds = false;
-    boolean hasForetoldFate = false;
-    boolean hasShackled = false;
+    protected  boolean hasWhatAreTheOdds = false;
+    protected boolean hasForetoldFate = false;
+    protected boolean hasShackled = false;
 
 	public Player() {
 		// TODO Auto-generated constructor stub

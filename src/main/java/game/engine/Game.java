@@ -18,7 +18,7 @@ public class Game {
 
 	public Game(int numPlayers){
 		
-		this.board = new Board();
+		this.board = new Board(10, 2, 5, 5, 5);
 		this.players = new ArrayList<>();
 		this.dice = new Dice();
 		this.currentPlayerIndex = 0; //always start at zero

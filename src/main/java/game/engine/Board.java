@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+
+
 public class Board {
 
     private final List<Tile> tiles;
@@ -49,7 +51,7 @@ public class Board {
             int dropTo = random.nextInt(index - 1) + 1;
 
             // Assuming you have a SnakeTile class
-            tiles.set(index, new SnakeTile(index, dropTo)); 
+           // tiles.set(index, new SnakeTile(index, dropTo)); 
         }
     }
 
@@ -74,21 +76,21 @@ public class Board {
             int climbTo = (maxClimb > index) ? random.nextInt(maxClimb - index) + index + 1 : size - 1;
             
             // Assuming you create a LadderTile class similar to SnakeTile
-            tiles.set(index, new LadderTile(index, climbTo));
+            //tiles.set(index, new LadderTile(index, climbTo));
         }
     }
 
     private void placeRandomCurses(int count) {
         List<Integer> validIndexes = getRandomTileSlots(count);
         for (int index : validIndexes) {
-            tiles.set(index, new CurseTile(index));
+            //tiles.set(index, new CurseTile(index));
         }
     }
 
     private void placeRandomBoons(int count) {
         List<Integer> validIndexes = getRandomTileSlots(count);
         for (int index : validIndexes) {
-            tiles.set(index, new BoonTile(index));
+            //tiles.set(index, new BoonTile(index));
         }
     }
 
