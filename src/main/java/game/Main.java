@@ -1,7 +1,6 @@
 package game;
 
-import game.engine.Board;
-import game.ui.*;
+import game.ui.GameWindow;
 
 /**
  * This would be our Caller for
@@ -11,6 +10,7 @@ import game.ui.*;
 
 public class Main { 
 
+	static int size = 0;
 
 
 	public static void main(String[] args) {
