@@ -42,6 +42,10 @@ public class ControlsPanel extends JPanel{
         add(new JButton("Reset"));
         JButton _Exit = new JButton("Exit");
 
+		add(_Exit);
+
+
+
 		
 	}
 

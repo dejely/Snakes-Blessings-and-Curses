@@ -1,7 +1,6 @@
 package game;
 
-import game.engine.Board;
-import game.ui.*;
+import game.ui.GameWindow;
 
 /**
  * This would be our Caller for

@@ -48,7 +48,7 @@ public class Board {
             if(tiles.get(index).getType() != TileType.NORMAL) continue;
 
             // Snake drop location: 1 to index-1
-            int dropTo = random.nextInt(index - 1) + 1;
+            int dropTo = index > 1 ? random.nextInt(index - 1) + 1 : 1; //Make sure if index is 0 return 1 up
 
             // Assuming you have a SnakeTile class
            // tiles.set(index, new SnakeTile(index, dropTo)); 
