@@ -40,8 +40,7 @@ public class Game {
 	public void gameLoop() {
 		//TODO: Code Block here
 		
-		if (isGameOver() == true) {
-			Dice.sc.close();
+		if (isGameOver()) {
 			System.exit(0);
 		}
 	}
