@@ -22,6 +22,7 @@ public class BoardPanel extends JPanel{
 
 		this.add(new JLabel("Hello, user!", JLabel.CENTER), BorderLayout.NORTH);
 		this.add(new JLabel("Welcome to Snake-Blessings and Curses", JLabel.CENTER), BorderLayout.CENTER);
+
 	
 	}
 
