@@ -1,165 +1,185 @@
 package game.ui;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Random;
-import javax.swing.*;
+import java.util.List;
 
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.SwingConstants;
+
+/**
+ * ControlsPanel: exposes simple API so other classes don't need to reference nested types.
+ */
 public class ControlsPanel extends JPanel {
 
-    // Helper method to let GameWindow access the Dice panel if needed
-    public final DicePanel dicePanel;
-    public final PlayerInfoPanel playerInfoPanel;
+    // Internal panels (nested to keep UI code together)
+    private final DicePanel dicePanel;
+    private final PlayerInfoPanel playerInfoPanel;
 
     public ControlsPanel() {
-        // Layout: Stack items vertically
-        this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Initialize sub-components
         dicePanel = new DicePanel();
         playerInfoPanel = new PlayerInfoPanel();
 
-        // Add them to this panel
-        this.add(dicePanel);
-        this.add(Box.createVerticalStrut(20)); // Spacing
-        this.add(playerInfoPanel);
-        this.add(Box.createVerticalGlue());    // Push everything up
+        add(dicePanel);
+        add(Box.createVerticalStrut(20));
+        add(playerInfoPanel);
+        add(Box.createVerticalGlue());
+    }
+
+    // ----- Dice API -----
+    public void addRollListener(ActionListener l) {
+        dicePanel.addRollListener(l);
+    }
+
+    public void setDiceFaces(int d1, int d2) {
+        dicePanel.setDiceFaces(d1, d2);
+    }
+
+    // ----- Players API -----
+    /**
+     * Register a Runnable callback to be invoked whenever the player list changes.
+     */
+    public void setOnPlayersChanged(Runnable callback) {
+        playerInfoPanel.setOnChange(callback);
+    }
+
+    /**
+     * Return a copy of the current player names.
+     */
+    public List<String> getPlayerNames() {
+        return new ArrayList<>(playerInfoPanel.getNames());
+    }
+
+    /**
+     * Add a player via the controls panel UI (keeps UI and model in sync).
+     */
+    public void addPlayerViaUI(String name) {
+        playerInfoPanel.addPlayer(name);
+    }
+
+    /**
+     * Remove last player via UI.
+     */
+    public void removeLastPlayerViaUI() {
+        playerInfoPanel.removeLastPlayer();
     }
 
     // ================== DICE PANEL ==================
-    public static class DicePanel extends JPanel {
-        private static final String[] DIE_FACES = {
-            "\u2680", "\u2681", "\u2682", "\u2683", "\u2684", "\u2685"
+    private static class DicePanel extends JPanel {
+        private static final String[] DIE_FACE = {
+                "\u2680", "\u2681", "\u2682", "\u2683", "\u2684", "\u2685"
         };
 
-        private final Random rnd = new Random();
         private final JLabel die1 = new JLabel("", SwingConstants.CENTER);
         private final JLabel die2 = new JLabel("", SwingConstants.CENTER);
+        private final JButton roll = new JButton("Roll");
 
         public DicePanel() {
             setLayout(new GridBagLayout());
             setBorder(BorderFactory.createTitledBorder("Dice"));
-            setBackground(new Color(245, 245, 245));
+            setBackground(Color.WHITE);
 
             GridBagConstraints c = new GridBagConstraints();
             Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 48);
-            
+
             die1.setFont(font);
             die2.setFont(font);
             die1.setPreferredSize(new Dimension(70, 70));
             die2.setPreferredSize(new Dimension(70, 70));
 
-            // Dice Setup
-            c.gridx = 0; c.gridy = 0; c.insets = new Insets(5, 5, 5, 5);
+            c.gridx = 0; c.gridy = 0;
             add(die1, c);
 
             c.gridx = 1;
             add(die2, c);
 
-            // Roll Button
-            JButton roll = new JButton("Roll");
-            roll.addActionListener(e -> rollDice());
-
-            c.gridx = 0; c.gridy = 1; 
-            c.gridwidth = 2;
+            c.gridx = 0; c.gridy = 1; c.gridwidth = 2;
             c.fill = GridBagConstraints.HORIZONTAL;
             add(roll, c);
 
-            rollDice(); // Initial roll
+            setDiceFaces(1, 1);
         }
 
-        private void rollDice() {
-            int v1 = rnd.nextInt(6);
-            int v2 = rnd.nextInt(6);
-            die1.setText(DIE_FACES[v1]);
-            die2.setText(DIE_FACES[v2]);
+        public void addRollListener(ActionListener l) {
+            roll.addActionListener(l);
+        }
+
+        public void setDiceFaces(int d1, int d2) {
+            d1 = Math.max(1, Math.min(6, d1));
+            d2 = Math.max(1, Math.min(6, d2));
+            die1.setText(DIE_FACE[d1 - 1]);
+            die2.setText(DIE_FACE[d2 - 1]);
         }
     }
 
-    // ================== PLAYER INFO PANEL ==================
-    // CHANGED: Made 'static' to fix instantiation errors
-    public static class PlayerInfoPanel extends JPanel {
+    // ================== PLAYER INFO PANEL (internal) ==================
+    // Kept private so external classes don't need to reference the nested type.
+    private static class PlayerInfoPanel extends JPanel {
 
-        private final ArrayList<JLabel> labels = new ArrayList<>();
-        private final ArrayList<String> names = new ArrayList<>();
-
-        private final JPanel listPanel = new JPanel(new GridLayout(0, 1, 5, 5)); // 0 rows means dynamic
-        private final JButton addBtn = new JButton("Add Player");
-        private final JButton removeBtn = new JButton("Remove Player");
-
-        private int currentPlayer = 0;
+        private final java.util.List<String> names = new ArrayList<>();
+        private final JPanel listPanel = new JPanel(new GridLayout(0, 1, 5, 5));
+        private Runnable onChange;
 
         public PlayerInfoPanel() {
             setLayout(new BorderLayout(5, 5));
             setBorder(BorderFactory.createTitledBorder("Players"));
 
-            // Default starting players
-            names.add("Player 1");
-            names.add("Player 2");
-            refreshPlayerList();
+            JButton addBtn = new JButton("Add Player");
+            JButton removeBtn = new JButton("Remove Player");
 
-            // Button panel
-            JPanel btnPanel = new JPanel(new GridLayout(2, 1, 5, 5));
-            btnPanel.add(addBtn);
-            btnPanel.add(removeBtn);
+            JPanel btns = new JPanel(new GridLayout(1, 2, 5, 5));
+            btns.add(addBtn);
+            btns.add(removeBtn);
 
-            add(listPanel, BorderLayout.CENTER);
-            add(btnPanel, BorderLayout.SOUTH);
+            add(new JScrollPane(listPanel), BorderLayout.CENTER);
+            add(btns, BorderLayout.SOUTH);
 
-            addBtn.addActionListener(e -> addPlayer());
-            removeBtn.addActionListener(e -> removePlayer());
-
-            updateButtonStates();
-        }
-
-        private void refreshPlayerList() {
-            listPanel.removeAll();
-            labels.clear();
-
-            for (int i = 0; i < names.size(); i++) {
-                String name = names.get(i);
-                JLabel lbl = new JLabel(name + " — Pos: 1");
-                lbl.setOpaque(true);
-                lbl.setBorder(BorderFactory.createEtchedBorder());
-                labels.add(lbl);
-                listPanel.add(lbl);
-            }
-
-            highlightCurrentPlayer();
-            revalidate();
-            repaint();
-        }
-
-        private void highlightCurrentPlayer() {
-            for (int i = 0; i < labels.size(); i++) {
-                JLabel lbl = labels.get(i);
-                if (i == currentPlayer) {
-                    lbl.setBackground(new Color(255, 230, 150)); // Highlight color
-                } else {
-                    lbl.setBackground(new Color(240, 240, 240));
+            addBtn.addActionListener(e -> {
+                String name = JOptionPane.showInputDialog(this, "Player name:");
+                if (name != null && !name.trim().isEmpty()) {
+                    addPlayer(name.trim());
                 }
-            }
+            });
+
+            removeBtn.addActionListener(e -> removeLastPlayer());
         }
 
-        private void addPlayer() {
-            if (names.size() >= 4) return;
-            names.add("Player " + (names.size() + 1));
-            refreshPlayerList();
-            updateButtonStates();
+        public void setOnChange(Runnable r) { this.onChange = r; }
+
+        public java.util.List<String> getNames() { return names; }
+
+        public void addPlayer(String name) {
+            names.add(name);
+            JLabel lbl = new JLabel(name);
+            listPanel.add(lbl);
+            revalidate(); repaint();
+            if (onChange != null) onChange.run();
         }
 
-        private void removePlayer() {
-            if (names.size() <= 2) return;
+        public void removeLastPlayer() {
+            if (names.isEmpty()) return;
             names.remove(names.size() - 1);
-            if (currentPlayer >= names.size()) currentPlayer = 0;
-            refreshPlayerList();
-            updateButtonStates();
-        }
-
-        private void updateButtonStates() {
-            addBtn.setEnabled(names.size() < 4);
-            removeBtn.setEnabled(names.size() > 2);
+            int lastIdx = listPanel.getComponentCount() - 1;
+            if (lastIdx >= 0) listPanel.remove(lastIdx);
+            revalidate(); repaint();
+            if (onChange != null) onChange.run();
         }
     }
 }

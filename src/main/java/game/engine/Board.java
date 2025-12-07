@@ -110,5 +110,9 @@ public class Board {
     
     // Accessors 
     public Tile getTile(int index) { return tiles.get(index); }
-    public int getSize() { return size; }
+    public int getSize() { return size + 1; }
+
+    public Snake getSnakeByHead(int tileNumber) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }
