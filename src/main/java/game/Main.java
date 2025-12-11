@@ -1,15 +1,6 @@
 package game;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-
-import game.engine.Board;
-import game.ui.*;
+import game.ui.GameWindow;
 
 /**
  * This would be our Caller for
@@ -19,6 +10,7 @@ import game.ui.*;
 
 public class Main { 
 
+	static int size = 0;
 
 
 	public static void main(String[] args) {
