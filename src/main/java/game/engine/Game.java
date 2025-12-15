@@ -1,68 +1,60 @@
 package game.engine;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/*
- * Game loop insert here
- */
+import java.util.*;
 
 public class Game {
-	
-	private Board board;
-	private List<Player> players;
-	private Dice dice; //Implemented a new dice logic
-	private int numPlayers, currentPlayerIndex;
-	private boolean gameRunning;
-	private Player winner;
 
-	public Game(int numPlayers){
-		
-		this.board = new Board(10, 2, 5, 5, 5);
-		this.players = new ArrayList<>();
-		this.dice = new Dice();
-		this.currentPlayerIndex = 0; //always start at zero
-		this.gameRunning = false;
-		
-		// __init__ players
-		
-		for (int i = 0; i < numPlayers; i++) {
-			players.add(new Player());
-		}
-		
-	}
-	
-	//Game loop starts
-	public void startGame(){
-		//TODO: Code Block here
-	}
-	
-	public void gameLoop() {
-		//TODO: Code Block here
-		
-		if (isGameOver()) {
-			System.exit(0);
-		}
-	}
-	
-	public void processTurn(Player player) {
-		/*
-		 * Method with Player type player var params 
-		 * TODO: Code Block here
-		 */
-		
-		
-		
-		
-	}
-	
-	public static boolean isGameOver() {
-		//TODO: Code Block here
-		
-		return false;
-	}
-	
-	//TODO: Import other game methods here
-	
+    public static void main(String[] args) {
 
+        Scanner sc = new Scanner(System.in);
+        Random random = new Random();
+
+        // Create players
+        List<Player> players = new ArrayList<>();
+        System.out.print("Enter number of players: ");
+        int playerCount = Integer.parseInt(sc.nextLine());
+        for (int i = 1; i <= playerCount; i++) {
+            System.out.print("Enter name for Player " + i + ": ");
+            players.add(new Player(sc.nextLine().trim()));
+        }
+
+        // Create board
+        Board board = new Board(50, 5, 5, 5, 5); // size=50, 5 snakes, 5 ladders, 5 curses, 5 blessings
+
+        boolean gameOver = false;
+        while (!gameOver) {
+            for (Player player : players) {
+
+                // Skip turn if Unmovable Man
+                if (player.skipNextTurn) {
+                    System.out.println(player.getName() + " skips this turn due to a curse!");
+                    player.skipNextTurn = false; // consume
+                    continue;
+                }
+
+                // Roll dice
+                int roll = random.nextInt(6) + 1;
+
+                // Apply curse/blessing effects via CheckProperties
+                roll = Dice.CheckProperties(roll, player);
+
+                // Move player
+                player.move(board);
+
+                // Handle end-of-turn counters
+                if (player.barredHeavenTurns > 0) player.barredHeavenTurns--;
+                if (player.blackoutTurns > 0) player.blackoutTurns--;
+                if (player.snakesMouthShutTurns > 0) player.snakesMouthShutTurns--;
+
+                // Check winning condition
+                if (player.getPosition() == board.getSize() - 1) {
+                    System.out.println(player.getName() + " wins!");
+                    gameOver = true;
+                    break;
+                }
+            }
+        }
+
+        sc.close();
+    }
 }

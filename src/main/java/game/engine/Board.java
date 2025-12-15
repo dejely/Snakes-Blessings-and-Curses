@@ -13,7 +13,7 @@ public class Board {
     private final int size;
     private final Random random = new Random();
 
-    public Board(int size, int snakeCount, int ladderCount, int curseCount, int boonCount) {
+    public Board(int size, int snakeCount, int ladderCount, int curseCount, int blessingCount) {
         this.size = size;
         this.tiles = new ArrayList<>(size);
 
@@ -21,7 +21,7 @@ public class Board {
         placeRandomSnakes(snakeCount);
         placeRandomLadders(ladderCount); 
         placeRandomCurses(curseCount);
-        placeRandomBoons(boonCount);
+        placeRandomBlessings(blessingCount);
     }
 
     private void generateDefaultTiles() {
@@ -57,40 +57,45 @@ public class Board {
 
     // New Method for Ladders/Vines
     private void placeRandomLadders(int count) {
-        int rowSize = (int) Math.sqrt(size);
         List<Integer> validIndexes = new ArrayList<>();
-        
-        // Start from tile 2, end before the last row (to ensure there is space to climb up)
+        int rowSize = (int) Math.sqrt(size);
+
+        // Ladder cannot start at last row or first tile
         for (int i = 2; i < size - rowSize; i++) {
-            validIndexes.add(i);
+            if (tiles.get(i).getType() == TileType.NORMAL)
+                validIndexes.add(i);
         }
-        
+
         Collections.shuffle(validIndexes);
-        
-        for(int i = 0; i < count && i < validIndexes.size(); i++) {
+
+        for (int i = 0; i < count && i < validIndexes.size(); i++) {
             int index = validIndexes.get(i);
-            if(tiles.get(index).getType() != TileType.NORMAL) continue;
-            
-            // Climb logic, must be higher than current, but not higher than size-1
-            int maxClimb = size - 2; 
+
+            int maxClimb = size - 2; // cannot climb to last tile
             int climbTo = (maxClimb > index) ? random.nextInt(maxClimb - index) + index + 1 : size - 1;
-            
-            // Assuming you create a LadderTile class similar to SnakeTile
-            //tiles.set(index, new LadderTile(index, climbTo));
+
+            tiles.set(index, new Ladder(index, climbTo));
         }
     }
+
 
     private void placeRandomCurses(int count) {
         List<Integer> validIndexes = getRandomTileSlots(count);
+        CurseType[] curseTypes = CurseType.values();
+
         for (int index : validIndexes) {
-            //tiles.set(index, new CurseTile(index));
+            CurseType type = curseTypes[random.nextInt(curseTypes.length)];
+            tiles.set(index, new Curse(index, type));
         }
     }
 
-    private void placeRandomBoons(int count) {
+    private void placeRandomBlessings(int count) {
         List<Integer> validIndexes = getRandomTileSlots(count);
+        BlessingType[] blessingTypes = BlessingType.values();
+
         for (int index : validIndexes) {
-            //tiles.set(index, new BoonTile(index));
+            BlessingType type = blessingTypes[random.nextInt(blessingTypes.length)];
+            tiles.set(index, new Blessing(index, type));
         }
     }
 

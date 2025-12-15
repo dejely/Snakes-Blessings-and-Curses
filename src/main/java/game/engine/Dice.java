@@ -5,18 +5,16 @@ import java.util.Scanner;
 
 public class Dice {
 	
-	private static Player player;
-    static Scanner sc = new Scanner(System.in);
-    public static void main(String[] args) {
-        int roll = DiceRollRNG();
-        System.out.println("Final roll: " + roll);
-    }
+    private static final Random rand = new Random();
+    private static final Scanner sc = new Scanner(System.in);
 
-    // Dice Roller
-    public static int DiceRollRNG() {
-        Random rand = new Random();
+    /**
+     * Roll the dice for a given player
+     * @param player The player rolling the dice
+     * @return modified roll based on curses/blessings
+     */
+    public static int DiceRollRNG(Player player) {
         int roll = rand.nextInt(6) + 1; // 1–6
-        
 		roll = player  != null ? CheckProperties(roll, player) : roll; //If player innit null, run condition
         return roll;
     }
@@ -27,8 +25,10 @@ public class Dice {
 
         if (player.hasWhatAreTheOdds) { // What Are The Odds?
             if (roll % 2 == 0) {
+                System.out.println(player.getName() + " rolled " + roll + " (even) → move forward");
                 return roll;      // even -> move forward
             } else {
+                System.out.println(player.getName() + " rolled " + roll + " (odd) → move backward");
                 return -roll;     // odd -> move backward
             }
         }
@@ -49,7 +49,8 @@ public class Dice {
             }
         }
         if (player.hasShackled) {// Shackled
-            roll = Math.max(0, roll - 2);
+            int newRoll = Math.max(0, roll - 2);
+            System.out.println(player.getName() + " is shackled! Roll reduced from " + roll + " → " + newRoll);
         }
         return roll;
     }
