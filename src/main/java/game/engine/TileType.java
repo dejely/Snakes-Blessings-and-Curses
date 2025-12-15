@@ -11,4 +11,6 @@ public enum TileType {
     BOON,
     CURSE,
     HIDDEN_TRICK
+
 }
+

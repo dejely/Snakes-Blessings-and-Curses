@@ -54,4 +54,3 @@ public class Dice {
         return roll;
     }
 }
-

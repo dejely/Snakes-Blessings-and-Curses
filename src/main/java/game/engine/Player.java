@@ -2,14 +2,15 @@ package game.engine;
 
 public class Player {
 	
-    protected  boolean hasWhatAreTheOdds = false;
-    protected boolean hasForetoldFate = false;
-    protected boolean hasShackled = false;
-
+    boolean hasWhatAreTheOdds = false;
+    boolean hasForetoldFate = false;
+    boolean hasShackled = false;
+    
     private String name;
-    private int position = 1;   // starting tile
+    private int position = 1;
 
 	public Player(String name) {
+		// TODO Auto-generated constructor stub
 		this.name = name;
 	}
 
@@ -47,6 +48,5 @@ public class Player {
         Tile tile = board.getTile(position);
         tile.applyEffect(this);
     }
-
 
 }
