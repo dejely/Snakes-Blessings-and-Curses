@@ -1,82 +1,89 @@
 package game.engine;
 
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 import java.util.Random;
 
 public class Game {
-
-    private final Board board;
     private final List<Player> players;
-    private int currentPlayerIndex;
+    private final Board board;
+    private final Dice dice = new Dice();
+    private int currentIndex = 0;
+    private boolean finished = false;
 
-    public Game() {
-        this.board = new Board(100, 2, 5, 5, 5);
-        this.players = new ArrayList<>();
-        this.currentPlayerIndex = 0;
-    }
-
-    // called by UI when adding players
-    public void addPlayer(String name) {
-        players.add(new Player(name));
-    }
-
-    public void clearPlayers() {
-        players.clear();
-        currentPlayerIndex = 0;
-    }
-
-    public List<Player> getPlayers() {
-        return players;
-    }
-
-    public Board getBoard() {
-        return board;
-    }
-
-    public Player getCurrentPlayer() {
-        if (players.isEmpty()) return null;
-        return players.get(currentPlayerIndex);
-    }
-
-    public int getCurrentPlayerIndex() {
-        return currentPlayerIndex;
-    }
-
-    /**
-     * Rolls 2 dice and applies player modifiers.
-     * Returns: {die1, die2, modifiedTotal}
-     */
-    public int[] rollForCurrentPlayer() {
-        if (players.isEmpty()) return new int[]{1,1,0};
-
-        Player p = getCurrentPlayer();
-        Random rnd = new Random();
-
-        int d1 = rnd.nextInt(6) + 1;
-        int d2 = rnd.nextInt(6) + 1;
-        int total = d1 + d2;
-
-        total = Dice.CheckProperties(total, p); // keep your special rules
-
-        return new int[] { d1, d2, total };
-    }
-
-    public void processCurrentPlayerTurn(int steps) {
-        if (players.isEmpty()) return;
-
-        Player p = getCurrentPlayer();
-        p.move(steps, board);
-
-        // advance turn
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-    }
-
-    public boolean isGameOver() {
-        int last = board.getSize() - 1;
-        for (Player p : players) {
-            if (p.getPosition() >= last) return true;
+    public Game(List<Player> players, Board board) {
+        if (players.size() < 2 || players.size() > 4) {
+            throw new IllegalArgumentException("Game supports 2–4 players");
         }
-        return false;
+        this.players = players;
+        this.board = board;
+    }
+
+    public void startGame() {
+        while (!finished) {
+            nextTurn();
+        }
+    }
+
+    public void nextTurn() {
+        Player current = players.get(currentIndex);
+
+        current.startTurn(this);
+
+        int roll = dice.roll();
+        roll = current.applyDiceModifiers(roll);
+
+        current.move(roll);
+
+        Tile tile = board.getTile(current.getPosition());
+        tile.onLand(current, this);
+
+        resolveBattles();
+
+        current.endTurn(this);
+
+        checkWinCondition(current);
+
+        advanceTurn();
+    }
+
+    private void resolveBattles() {
+        Map<Integer, List<Player>> byPosition = new HashMap<>();
+
+        for (Player p : players) {
+            byPosition.computeIfAbsent(p.getPosition(), k -> new ArrayList<>()).add(p);
+        }
+
+        for (List<Player> group : byPosition.values()) {
+            if (group.size() > 1) {
+                resolveBattle(group);
+            }
+        }
+    }
+
+    private void resolveBattle(List<Player> contenders) {
+        Map<Player, Integer> rolls = new HashMap<>();
+        for (Player p : contenders) {
+            rolls.put(p, dice.roll());
+        }
+
+        int max = Collections.max(rolls.values());
+
+        for (Map.Entry<Player, Integer> e : rolls.entrySet()) {
+            int diff = max - e.getValue();
+            if (diff > 0) {
+                e.getKey().move(-diff);
+            }
+        }
+    }
+
+    private void checkWinCondition(Player p) {
+        if (p.getPosition() >= 100) {
+            finished = true;
+        }
+    }
+
+    private void advanceTurn() {
+        currentIndex = (currentIndex + 1) % players.size();
     }
 }

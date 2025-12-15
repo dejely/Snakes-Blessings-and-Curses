@@ -1,20 +1,19 @@
 package game.engine;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
 public class Player {
-	
-    boolean hasWhatAreTheOdds = false;
-    boolean hasForetoldFate = false;
-    boolean hasShackled = false;
-    
-    private String name;
+    private final String name;
     private int position = 1;
+    private final List<Effect> effects = new ArrayList<>();
 
-	public Player(String name) {
-		// TODO Auto-generated constructor stub
-		this.name = name;
-	}
+    public Player(String name) {
+        this.name = name;
+    }
 
-     // getters
     public String getName() {
         return name;
     }
@@ -23,30 +22,45 @@ public class Player {
         return position;
     }
 
-    // setter
-    public void setPosition(int position) {
-        this.position = position;
+    public void move(int steps) {
+        position = Math.min(position + steps, 100);
     }
 
-    // Moves the player by dice roll, the board will then apply tile effects separately.
+    public void addEffect(Effect e, Game g) {
+        effects.add(e);
+        e.onApply(this, g);
+    }
 
-    public void move(int roll, Board board) {
-        System.out.println(name + " rolled a " + roll);
+    public boolean hasEffect(EffectType type) {
+        return effects.stream().anyMatch(e -> e.getType() == type);
+    }
 
-        int newPos = position + roll;
+    public List<Effect> getEffects() {
+        return Collections.unmodifiableList(effects);
+    }
 
-        // Do not exceed board limit (assuming 100)
-        if (newPos > board.getSize() - 1) {
-            newPos = board.getSize() - 1;
+    public int applyDiceModifiers(int base) {
+        int modified = base;
+        for (Effect e : effects) {
+            modified = e.modifyDice(modified);
         }
-
-        this.position = newPos;
-
-        System.out.println(name + " moved to tile " + position);
-
-        // Apply tile effects
-        Tile tile = board.getTile(position);
-        tile.applyEffect(this);
+        return modified;
     }
 
+    public void startTurn(Game g) {
+        effects.forEach(e -> e.onStartTurn(this, g));
+    }
+
+    public void endTurn(Game g) {
+        Iterator<Effect> it = effects.iterator();
+        while (it.hasNext()) {
+            Effect e = it.next();
+            e.onEndTurn(this, g);
+            e.decrement();
+            if (e.getRemainingTurns() <= 0) {
+                e.onExpire(this, g);
+                it.remove();
+            }
+        }
+    }
 }
