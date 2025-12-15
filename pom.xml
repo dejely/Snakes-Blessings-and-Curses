@@ -12,18 +12,19 @@
     <name>Snakes-Blessing-and-Curse</name>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+	<maven.compiler.release>17</maven.compiler.release>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
-            <scope>test</scope>
-        </dependency>
+<!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
+		<dependency>
+		    <groupId>org.junit.jupiter</groupId>
+		    <artifactId>junit-jupiter-api</artifactId>
+		    <version>6.1.0-M1</version>
+		    <scope>test</scope>
+		</dependency>
     </dependencies>
 
 <build>
@@ -38,6 +39,13 @@
                 <target>17</target>
             </configuration>
         </plugin>
+        
+		<plugin>
+		  <groupId>org.apache.maven.plugins</groupId>
+		  <artifactId>maven-surefire-plugin</artifactId>
+		  <version>3.1.2</version>
+		</plugin>
+
 
         <!-- JAR Plugin (This makes the jar runnable) -->
         <plugin>

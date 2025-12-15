@@ -1,17 +1,19 @@
 package game.engine;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import game.character.*;
+import game.character.Character;
+import game.effects.*;
+import java.util.*;
 
 public class Player {
     private final String name;
-    private int position = 1;
+    private final Character character;
+    private int position = 0;
     private final List<Effect> effects = new ArrayList<>();
 
-    public Player(String name) {
+    public Player(String name, Character character) {
         this.name = name;
+        this.character = character;
     }
 
     public String getName() {
@@ -22,8 +24,14 @@ public class Player {
         return position;
     }
 
+    public Character getCharacter() {
+        return character;
+    }
+
     public void move(int steps) {
-        position = Math.min(position + steps, 100);
+        position = Math.min(Math.max(1, position + steps), 100);
+        System.out.println(name + " moved to " + position);
+
     }
 
     public void addEffect(Effect e, Game g) {
@@ -31,36 +39,44 @@ public class Player {
         e.onApply(this, g);
     }
 
-    public boolean hasEffect(EffectType type) {
-        return effects.stream().anyMatch(e -> e.getType() == type);
-    }
-
-    public List<Effect> getEffects() {
-        return Collections.unmodifiableList(effects);
-    }
-
-    public int applyDiceModifiers(int base) {
-        int modified = base;
-        for (Effect e : effects) {
-            modified = e.modifyDice(modified);
-        }
-        return modified;
-    }
-
     public void startTurn(Game g) {
-        effects.forEach(e -> e.onStartTurn(this, g));
+        character.getPassiveSkill().onTurnStart(this, g);
+        effects.forEach(e -> e.onTurnStart(this, g));
+    }
+
+    public RollContext buildRollContext(Game g, int baseRoll) {
+        RollContext ctx = new RollContext();
+        ctx.rollValue = baseRoll;
+        effects.forEach(e -> e.onBeforeRoll(this, g, ctx));
+        return ctx;
+    }
+
+    public void afterMove(Game g) {
+        effects.forEach(e -> e.onAfterMove(this, g));
     }
 
     public void endTurn(Game g) {
+        if (position >= 100) return;
+
         Iterator<Effect> it = effects.iterator();
         while (it.hasNext()) {
             Effect e = it.next();
-            e.onEndTurn(this, g);
-            e.decrement();
-            if (e.getRemainingTurns() <= 0) {
-                e.onExpire(this, g);
-                it.remove();
-            }
+            e.onTurnEnd(this, g);
+            e.decrementDuration();
+            if (e.isExpired()) it.remove();
         }
+
+        Skill active = character.getActiveSkill();
+        if (active instanceof ActiveSkill as) {
+            as.tickCooldown();
+        }
+    }
+
+    public boolean canActivateSkill(Game g) {
+        return character.getActiveSkill().canActivate(this, g);
+    }
+
+    public void activateSkill(Game g) {
+        character.getActiveSkill().activate(this, g);
     }
 }

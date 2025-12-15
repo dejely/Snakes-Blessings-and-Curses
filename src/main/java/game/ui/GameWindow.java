@@ -1,56 +1,64 @@
 package game.ui;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Image;
-import java.net.URL;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingConstants;
+import game.engine.*;
 
-public class GameWindow extends JFrame {
+import javax.swing.*;
+import java.awt.*;
 
-    public GameWindow() {
-        super("Snakes: Blessings and Curses");
-        
-        // 1. Setup Main Layout
-        this.setLayout(new BorderLayout());
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+public class GameWindow extends JFrame implements GameListener {
 
-        // 2. Setup the Board (Center)
-        JPanel boardContainer = new JPanel(new BorderLayout());
-        boardContainer.setBackground(Color.DARK_GRAY);
-        
-        // Try to load image safely
-        URL imgUrl = getClass().getResource("BoardPanel1.jpg");
-        if (imgUrl != null) {
-            ImageIcon image = new ImageIcon(imgUrl);
-            Image scaledImage = image.getImage().getScaledInstance(800, 800, Image.SCALE_SMOOTH);
-            JLabel picture = new JLabel(new ImageIcon(scaledImage));
-            boardContainer.add(picture, BorderLayout.CENTER);
-        } else {
-            // Fallback if image is missing
-            JLabel errorLabel = new JLabel("Board Image Not Found", SwingConstants.CENTER);
-            errorLabel.setForeground(Color.WHITE);
-            errorLabel.setPreferredSize(new Dimension(800, 800));
-            boardContainer.add(errorLabel, BorderLayout.CENTER);
-        }
+    private final BoardPanel boardPanel;
+    private final ControlPanel controlPanel;
 
-        this.add(boardContainer, BorderLayout.CENTER);
+    public GameWindow(Game game) {
+        setTitle("Snakes: Blessings and Curses");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
 
-        // 3. Setup the Controls (Left Side / West)
-        ControlsPanel controls = new ControlsPanel();
-        // Give the side panel a preferred width
-        controls.setPreferredSize(new Dimension(250, 800)); 
-        this.add(controls, BorderLayout.WEST);
+        boardPanel = new BoardPanel(game);
+        controlPanel = new ControlPanel(game);
 
-        // 4. Finalize Window
-        this.setResizable(true);
-        this.pack();
-        this.setLocationRelativeTo(null); // Center on screen
-        this.setVisible(true);
+        // ✅ ONLY GameWindow is the listener
+        game.addListener(this);
+
+        add(boardPanel, BorderLayout.CENTER);
+        add(controlPanel, BorderLayout.SOUTH);
+
+        pack();
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+
+    // ================= GameListener =================
+
+    @Override
+    public void onTurnStarted(Player p) {
+        boardPanel.repaint();
+        controlPanel.update();
+    }
+
+    public void onDiceRolled(int value) {
+        controlPanel.update();
+    }
+
+    public void onPlayerMoved(Player p) {
+        boardPanel.repaint();
+        controlPanel.update();
+        System.out.println("UI repaint after move");
+    }
+
+    @Override
+    public void onEffectsUpdated(Player p) {
+        controlPanel.update();
+    }
+
+    @Override
+    public void onGameEnded(Player winner) {
+        JOptionPane.showMessageDialog(
+            this,
+            winner.getName() + " wins!",
+            "Game Over",
+            JOptionPane.INFORMATION_MESSAGE
+        );
     }
 }

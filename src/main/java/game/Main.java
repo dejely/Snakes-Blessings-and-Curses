@@ -1,24 +1,12 @@
 package game;
 
-import game.ui.GameWindow;
+import game.ui.CharacterSelectionMenu;
 
-/**
- * This would be our Caller for
- * All the Subsystems we made per packages(file sub directories)
- * As mentioned in Design Patterns: Facade
- */
+import javax.swing.SwingUtilities;
 
-public class Main { 
-
-	static int size = 0;
-
-
-	public static void main(String[] args) {
-
-		new GameWindow();
-		
-	}
-	
-	
-
+public class Main {
+    public static void main(String[] args) {
+    	
+        SwingUtilities.invokeLater(CharacterSelectionMenu::new);
+    }
 }
