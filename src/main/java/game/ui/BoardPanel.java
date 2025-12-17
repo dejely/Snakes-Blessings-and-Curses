@@ -10,6 +10,8 @@ import java.util.List;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
+import game.engine.Player;
+
 public class BoardPanel extends JPanel {
 
     private Image boardImage;
@@ -135,5 +137,10 @@ public class BoardPanel extends JPanel {
             g.setColor(Color.BLACK);
             g.drawOval(xCenter, yCenter, tokenSize, tokenSize);
         }
+    }
+
+    public void updatePositionsFromPlayers(List<Player> players) {
+        List<Integer> positions = players.stream().map(Player::getPosition).toList();
+        updatePositions(positions);
     }
 }

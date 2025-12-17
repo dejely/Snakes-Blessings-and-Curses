@@ -6,14 +6,23 @@ import java.util.List;
 import java.util.Random;
 import javax.swing.*;
 
+import game.engine.Blessing;
+import game.engine.Curse;
+import game.engine.Dice;
+import game.engine.Game;
+import game.engine.Ladder;
+import game.engine.Player;
+import game.engine.Snake;
+import game.engine.Tile;
+
 public class ControlsPanel extends JPanel {
 
     private BoardPanel boardPanel;
     // We need a reference to the Main Window so we can tell it to "Exit"
     private GameWindow gameWindow; 
     
-    private List<Integer> positions;
-    private List<String> playerNames;
+    private final List<Player> players;
+    private Game game;
     private int currentPlayerIndex = 0; 
     private boolean isAnimating = false; 
 
@@ -24,15 +33,10 @@ public class ControlsPanel extends JPanel {
     public ControlsPanel(GameWindow window, BoardPanel board, int initialPlayerCount) {
         this.gameWindow = window; // Save the reference
         this.boardPanel = board;
-        this.positions = new ArrayList<>();
-        this.playerNames = new ArrayList<>();
+        this.game = new Game(initialPlayerCount);
+        this.players = game.getPlayers();
+        boardPanel.updatePositionsFromPlayers(players);
 
-        for (int i = 1; i <= initialPlayerCount; i++) {
-            playerNames.add("Player " + i);
-            positions.add(1); 
-        }
-        
-        boardPanel.updatePositions(positions);
 
         this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -70,6 +74,14 @@ public class ControlsPanel extends JPanel {
         playerInfoPanel.refreshUI("");
     }
 
+    private void updatePlayerPositions() {
+        List<Integer> pos = new ArrayList<>();
+        for (Player p : players) {
+            pos.add(p.getPosition());
+        }
+        boardPanel.updatePositions(pos);
+    }
+
     // --- ANIMATION PHASE 1: DICE FLICKER ---
     public void startDiceAnimation() {
         if (isAnimating) return;
@@ -82,62 +94,61 @@ public class ControlsPanel extends JPanel {
         diceTimer.addActionListener(e -> {
             dicePanel.showRandomFace();
             ticks[0]++;
-            
+
             if (ticks[0] >= 20) {
                 diceTimer.stop();
-                int v1 = new Random().nextInt(6) + 1;
-                int v2 = new Random().nextInt(6) + 1;
-                dicePanel.setFinalFace(v1, v2);
-                startPlayerMovement(v1 + v2);
+
+                Player currentPlayer = players.get(currentPlayerIndex);
+                int roll = Dice.DiceRollRNG(currentPlayer); // roll using engine dice
+                dicePanel.setFinalFace((roll + 1)/2, (roll + 1)/2); // optional visual adjustment
+
+                // Move player via engine
+                currentPlayer.move(roll, game.getBoard()); // engine handles curses/blessings
+                updatePlayerPositions();
+
+                finishTurnLogic();
             }
         });
         diceTimer.start();
     }
 
     // --- ANIMATION PHASE 2: PLAYER HOPPING ---
-    private void startPlayerMovement(int diceValue) {
-        int currentPos = positions.get(currentPlayerIndex);
-        int targetPos = currentPos + diceValue;
-        if (targetPos > 100) targetPos = 100;
-
-        final int finalTarget = targetPos;
-        Timer moveTimer = new Timer(300, null);
-        
-        moveTimer.addActionListener(e -> {
-            int current = positions.get(currentPlayerIndex);
-            
-            if (current < finalTarget) {
-                positions.set(currentPlayerIndex, current + 1);
-                boardPanel.updatePositions(positions);
-            } else {
-                ((Timer)e.getSource()).stop();
-                finishTurnLogic(finalTarget);
-            }
-        });
-        moveTimer.start();
-    }
+    // removed for the meantime
 
     // --- PHASE 3: LOGIC CHECKS ---
-    private void finishTurnLogic(int landedPos) {
-        int tileType = boardPanel.getTileType(landedPos);
-        String message = "";
-        
-        if (tileType == 1) message = " (GOOD!)";
-        else if (tileType == 2) message = " (BAD!)";
+    private void finishTurnLogic() {
+        Player currentPlayer = players.get(currentPlayerIndex);
+        int landedPos = currentPlayer.getPosition();
+        Tile landedTile = game.getBoard().getTile(landedPos);
 
-        if (tileType == 3 || landedPos == 100) {
-            JOptionPane.showMessageDialog(this, 
-                "CONGRATULATIONS!\n" + playerNames.get(currentPlayerIndex) + " has won!", 
-                "Game Over", JOptionPane.INFORMATION_MESSAGE);
-            
-            // Go back to menu on win
+        String message = "";
+
+        if (landedTile instanceof Blessing) {
+            message = " (BLESSING!)";
+        } else if (landedTile instanceof Curse) {
+            message = " (CURSE!)";
+        } else if (landedTile instanceof Snake) {
+            message = " (SNAKE!)";
+        } else if (landedTile instanceof Ladder) {
+            message = " (LADDER!)";
+        }
+
+        // Win check
+        if (landedPos >= game.getBoard().getSize() - 1) {
+            JOptionPane.showMessageDialog(
+                this,
+                "CONGRATULATIONS!\n" + currentPlayer.getName() + " has won!",
+                "Game Over",
+                JOptionPane.INFORMATION_MESSAGE
+            );
             gameWindow.returnToMenu();
             return;
         }
 
-        currentPlayerIndex = (currentPlayerIndex + 1) % positions.size();
+        // Next player
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
         playerInfoPanel.refreshUI(message);
-        
+
         isAnimating = false;
         dicePanel.toggleButtons(true);
     }
@@ -195,9 +206,9 @@ public class ControlsPanel extends JPanel {
 
         public void refreshUI(String lastActionMessage) {
             listPanel.removeAll();
-            for (int i = 0; i < playerNames.size(); i++) {
-                String name = playerNames.get(i);
-                int pos = positions.get(i);
+            for (int i = 0; i < players.size(); i++) {
+                String name = players.get(i).getName();
+                int pos = players.get(i).getPosition();;
                 String text = name + " (Tile " + pos + ")";
                 JLabel lbl = new JLabel(text);
                 lbl.setOpaque(true);
@@ -210,7 +221,7 @@ public class ControlsPanel extends JPanel {
                     lbl.setText("--> " + text);
                     lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
                 } 
-                else if (i == (currentPlayerIndex - 1 + playerNames.size()) % playerNames.size()) {
+                else if (i == (currentPlayerIndex - 1 + players.size()) % players.size()) {
                     lbl.setBackground(new Color(240, 240, 240));
                     lbl.setText(text + lastActionMessage);
                 }
