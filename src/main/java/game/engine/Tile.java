@@ -7,7 +7,6 @@ public abstract class Tile {
     // Constructor accepts both index and type
     public Tile(int index, TileType type) {
         this.index = index;
-        this.type = type;
     }
 
     public int getIndex() {

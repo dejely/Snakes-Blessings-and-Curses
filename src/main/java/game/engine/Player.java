@@ -3,8 +3,10 @@ import java.util.Random;
 
 public class Player {
 
-    private String name;
-    private int position = 1;   // starting tile
+public class Player {
+    private final String name;
+    private int position = 1;
+    private final List<Effect> effects = new ArrayList<>();
 
     // Curses
     protected boolean hasWhatAreTheOdds = false;
@@ -25,7 +27,6 @@ public class Player {
 		this.name = name;
 	}
 
-     // getters
     public String getName() {
         return name;
     }
@@ -34,9 +35,8 @@ public class Player {
         return position;
     }
 
-    // setter
-    public void setPosition(int position) {
-        this.position = position;
+    public void move(int steps) {
+        position = Math.min(position + steps, 100);
     }
 
     /**
@@ -45,7 +45,9 @@ public class Player {
     public void move(int roll, Board board) {
         System.out.println(name + " rolled a " + roll);
 
-        int newPos = position + roll;
+    public List<Effect> getEffects() {
+        return Collections.unmodifiableList(effects);
+    }
 
         // Do not exceed board limit
         if (newPos > board.getSize() - 1) newPos = board.getSize() - 1;

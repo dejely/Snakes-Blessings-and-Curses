@@ -8,6 +8,7 @@ import java.util.Random;
 
 
 public class Board {
+    private final Tile[] tiles = new Tile[100];
 
     private final List<Tile> tiles;
     private final int size;
@@ -136,8 +137,4 @@ public class Board {
         Collections.shuffle(indexes);
         return indexes.subList(0, Math.min(count, indexes.size()));
     }
-    
-    // Accessors 
-    public Tile getTile(int index) { return tiles.get(index); }
-    public int getSize() { return size; }
 }
