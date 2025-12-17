@@ -1,60 +1,108 @@
 package game.engine;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class Game {
 
-    public static void main(String[] args) {
+    private Board board;
+    private List<Player> players;
+    private int currentPlayerIndex;
+    private boolean gameRunning;
+    private Player winner;
 
-        Scanner sc = new Scanner(System.in);
-        Random random = new Random();
+    public Game(int numPlayers) {
+        this.board = new Board(10, 2, 5, 5, 5);
+        this.players = new ArrayList<>();
+        this.currentPlayerIndex = 0;
+        this.gameRunning = false;
 
-        // Create players
-        List<Player> players = new ArrayList<>();
-        System.out.print("Enter number of players: ");
-        int playerCount = Integer.parseInt(sc.nextLine());
-        for (int i = 1; i <= playerCount; i++) {
-            System.out.print("Enter name for Player " + i + ": ");
-            players.add(new Player(sc.nextLine().trim()));
+        // Initialize players
+        for (int i = 0; i < numPlayers; i++) {
+            players.add(new Player("Player " + (i + 1)));
+        }
+    }
+
+    // ---------------- Roll dice for GUI button ----------------
+    public void rollDiceForCurrentPlayer() {
+        Player currentPlayer = players.get(currentPlayerIndex);
+
+        // Skip turn if Unmovable Man curse
+        if (currentPlayer.skipNextTurn) {
+            System.out.println(currentPlayer.getName() + " skips this turn!");
+            currentPlayer.skipNextTurn = false;
+            nextTurn();
+            return;
         }
 
-        // Create board
-        Board board = new Board(50, 5, 5, 5, 5); // size=50, 5 snakes, 5 ladders, 5 curses, 5 blessings
+        // Roll dice using player effects
+        int roll = Dice.DiceRollRNG(currentPlayer); // Dice controlled by Game
+        currentPlayer.move(roll, board);
 
-        boolean gameOver = false;
-        while (!gameOver) {
-            for (Player player : players) {
+        // Handle Switcheroo immediately after movement
+        handleSwitcheroo(currentPlayer);
 
-                // Skip turn if Unmovable Man
-                if (player.skipNextTurn) {
-                    System.out.println(player.getName() + " skips this turn due to a curse!");
-                    player.skipNextTurn = false; // consume
-                    continue;
-                }
+        // Decrement timers
+        if (currentPlayer.blackoutTurns > 0) currentPlayer.blackoutTurns--;
+        if (currentPlayer.barredHeavenTurns > 0) currentPlayer.barredHeavenTurns--;
+        if (currentPlayer.danielBlessingTurns > 0) currentPlayer.danielBlessingTurns--;
 
-                // Roll dice
-                int roll = random.nextInt(6) + 1;
+        // Shuffle snakes if Blackout active
+        if (currentPlayer.blackoutTurns > 0) {
+            board.shuffleSnakes();
+            System.out.println(currentPlayer.getName() + " triggered Blackout! Snakes shuffled.");
+        }
 
-                // Apply curse/blessing effects via CheckProperties
-                roll = Dice.CheckProperties(roll, player);
+        // Check for game over
+        if (isGameOver()) {
+            gameRunning = false;
+            System.out.println("Winner: " + winner.getName());
+            return;
+        }
 
-                // Move player
-                player.move(board);
+        nextTurn();
+    }
 
-                // Handle end-of-turn counters
-                if (player.barredHeavenTurns > 0) player.barredHeavenTurns--;
-                if (player.blackoutTurns > 0) player.blackoutTurns--;
-                if (player.snakesMouthShutTurns > 0) player.snakesMouthShutTurns--;
+    // ---------------- Handle Switcheroo ----------------
+    private void handleSwitcheroo(Player player) {
+        if (!player.hasSwitcheroo) return;
 
-                // Check winning condition
-                if (player.getPosition() == board.getSize() - 1) {
-                    System.out.println(player.getName() + " wins!");
-                    gameOver = true;
-                    break;
-                }
+        List<Player> aheadPlayers = new ArrayList<>();
+        for (Player p : players) {
+            if (p.getPosition() > player.getPosition()) aheadPlayers.add(p);
+        }
+
+        if (!aheadPlayers.isEmpty()) {
+            Random rand = new Random();
+            Player target = aheadPlayers.get(rand.nextInt(aheadPlayers.size()));
+
+            int tempPos = player.getPosition();
+            player.setPosition(target.getPosition());
+            target.setPosition(tempPos);
+
+            System.out.println(player.getName() + " swapped with " + target.getName() + "!");
+        } else {
+            System.out.println(player.getName() + " tried Switcheroo but no one is ahead!");
+        }
+
+        player.hasSwitcheroo = false; // clear flag
+    }
+
+    // ---------------- Turn order ----------------
+    private void nextTurn() {
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        System.out.println("Next turn: " + players.get(currentPlayerIndex).getName());
+    }
+
+    // ---------------- Game over check ----------------
+    public boolean isGameOver() {
+        for (Player player : players) {
+            if (player.getPosition() == board.getSize() - 1) {
+                winner = player;
+                return true;
             }
         }
-
-        sc.close();
+        return false;
     }
 }

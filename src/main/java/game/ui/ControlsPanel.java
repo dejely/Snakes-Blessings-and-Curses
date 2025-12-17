@@ -2,164 +2,225 @@ package game.ui;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import javax.swing.*;
 
 public class ControlsPanel extends JPanel {
 
-    // Helper method to let GameWindow access the Dice panel if needed
+    private BoardPanel boardPanel;
+    // We need a reference to the Main Window so we can tell it to "Exit"
+    private GameWindow gameWindow; 
+    
+    private List<Integer> positions;
+    private List<String> playerNames;
+    private int currentPlayerIndex = 0; 
+    private boolean isAnimating = false; 
+
     public final DicePanel dicePanel;
     public final PlayerInfoPanel playerInfoPanel;
 
-    public ControlsPanel() {
-        // Layout: Stack items vertically
+    // CHANGED: Constructor now accepts GameWindow
+    public ControlsPanel(GameWindow window, BoardPanel board, int initialPlayerCount) {
+        this.gameWindow = window; // Save the reference
+        this.boardPanel = board;
+        this.positions = new ArrayList<>();
+        this.playerNames = new ArrayList<>();
+
+        for (int i = 1; i <= initialPlayerCount; i++) {
+            playerNames.add("Player " + i);
+            positions.add(1); 
+        }
+        
+        boardPanel.updatePositions(positions);
+
         this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Initialize sub-components
         dicePanel = new DicePanel();
         playerInfoPanel = new PlayerInfoPanel();
 
-        // Add them to this panel
-        this.add(dicePanel);
-        this.add(Box.createVerticalStrut(20)); // Spacing
-        this.add(playerInfoPanel);
-        this.add(Box.createVerticalGlue());    // Push everything up
+        add(dicePanel);
+        add(Box.createVerticalStrut(20));
+        add(playerInfoPanel);
+        add(Box.createVerticalGlue()); // Pushes everything up
+        
+        // --- NEW: EXIT BUTTON ---
+        JButton exitBtn = new JButton("Exit to Menu");
+        exitBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        exitBtn.setBackground(new Color(200, 50, 50)); // Red
+        exitBtn.setForeground(Color.WHITE);
+        exitBtn.setMaximumSize(new Dimension(200, 40));
+        
+        exitBtn.addActionListener(e -> {
+            // Confirm before quitting
+            int choice = JOptionPane.showConfirmDialog(this, 
+                "Are you sure you want to quit the current game?", 
+                "Exit Game", JOptionPane.YES_NO_OPTION);
+                
+            if (choice == JOptionPane.YES_OPTION) {
+                gameWindow.returnToMenu(); // Call the method in GameWindow
+            }
+        });
+        
+        add(Box.createVerticalStrut(20));
+        add(exitBtn);
+        // ------------------------
+        
+        playerInfoPanel.refreshUI("");
+    }
+
+    // --- ANIMATION PHASE 1: DICE FLICKER ---
+    public void startDiceAnimation() {
+        if (isAnimating) return;
+        isAnimating = true;
+        dicePanel.toggleButtons(false);
+
+        Timer diceTimer = new Timer(50, null); 
+        final int[] ticks = {0}; 
+
+        diceTimer.addActionListener(e -> {
+            dicePanel.showRandomFace();
+            ticks[0]++;
+            
+            if (ticks[0] >= 20) {
+                diceTimer.stop();
+                int v1 = new Random().nextInt(6) + 1;
+                int v2 = new Random().nextInt(6) + 1;
+                dicePanel.setFinalFace(v1, v2);
+                startPlayerMovement(v1 + v2);
+            }
+        });
+        diceTimer.start();
+    }
+
+    // --- ANIMATION PHASE 2: PLAYER HOPPING ---
+    private void startPlayerMovement(int diceValue) {
+        int currentPos = positions.get(currentPlayerIndex);
+        int targetPos = currentPos + diceValue;
+        if (targetPos > 100) targetPos = 100;
+
+        final int finalTarget = targetPos;
+        Timer moveTimer = new Timer(300, null);
+        
+        moveTimer.addActionListener(e -> {
+            int current = positions.get(currentPlayerIndex);
+            
+            if (current < finalTarget) {
+                positions.set(currentPlayerIndex, current + 1);
+                boardPanel.updatePositions(positions);
+            } else {
+                ((Timer)e.getSource()).stop();
+                finishTurnLogic(finalTarget);
+            }
+        });
+        moveTimer.start();
+    }
+
+    // --- PHASE 3: LOGIC CHECKS ---
+    private void finishTurnLogic(int landedPos) {
+        int tileType = boardPanel.getTileType(landedPos);
+        String message = "";
+        
+        if (tileType == 1) message = " (GOOD!)";
+        else if (tileType == 2) message = " (BAD!)";
+
+        if (tileType == 3 || landedPos == 100) {
+            JOptionPane.showMessageDialog(this, 
+                "CONGRATULATIONS!\n" + playerNames.get(currentPlayerIndex) + " has won!", 
+                "Game Over", JOptionPane.INFORMATION_MESSAGE);
+            
+            // Go back to menu on win
+            gameWindow.returnToMenu();
+            return;
+        }
+
+        currentPlayerIndex = (currentPlayerIndex + 1) % positions.size();
+        playerInfoPanel.refreshUI(message);
+        
+        isAnimating = false;
+        dicePanel.toggleButtons(true);
     }
 
     // ================== DICE PANEL ==================
-    public static class DicePanel extends JPanel {
-        private static final String[] DIE_FACES = {
-            "\u2680", "\u2681", "\u2682", "\u2683", "\u2684", "\u2685"
-        };
-
+    public class DicePanel extends JPanel {
+        private static final String[] DIE_FACES = { "\u2680", "\u2681", "\u2682", "\u2683", "\u2684", "\u2685" };
         private final Random rnd = new Random();
-        private final JLabel die1 = new JLabel("", SwingConstants.CENTER);
-        private final JLabel die2 = new JLabel("", SwingConstants.CENTER);
+        private final JLabel die1 = new JLabel(DIE_FACES[0], SwingConstants.CENTER);
+        private final JLabel die2 = new JLabel(DIE_FACES[0], SwingConstants.CENTER);
+        private final JButton rollBtn = new JButton("Roll Dice");
 
         public DicePanel() {
             setLayout(new GridBagLayout());
             setBorder(BorderFactory.createTitledBorder("Dice"));
             setBackground(new Color(245, 245, 245));
+            
+            Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 48);
+            die1.setFont(font); die2.setFont(font);
 
             GridBagConstraints c = new GridBagConstraints();
-            Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 48);
-            
-            die1.setFont(font);
-            die2.setFont(font);
-            die1.setPreferredSize(new Dimension(70, 70));
-            die2.setPreferredSize(new Dimension(70, 70));
+            c.gridx = 0; c.gridy = 0; add(die1, c);
+            c.gridx = 1; add(die2, c);
 
-            // Dice Setup
-            c.gridx = 0; c.gridy = 0; c.insets = new Insets(5, 5, 5, 5);
-            add(die1, c);
+            rollBtn.addActionListener(e -> startDiceAnimation());
 
-            c.gridx = 1;
-            add(die2, c);
-
-            // Roll Button
-            JButton roll = new JButton("Roll");
-            roll.addActionListener(e -> rollDice());
-
-            c.gridx = 0; c.gridy = 1; 
-            c.gridwidth = 2;
-            c.fill = GridBagConstraints.HORIZONTAL;
-            add(roll, c);
-
-            rollDice(); // Initial roll
+            c.gridx = 0; c.gridy = 1; c.gridwidth = 2; c.fill = GridBagConstraints.HORIZONTAL;
+            add(rollBtn, c);
         }
 
-        private void rollDice() {
-            int v1 = rnd.nextInt(6);
-            int v2 = rnd.nextInt(6);
-            die1.setText(DIE_FACES[v1]);
-            die2.setText(DIE_FACES[v2]);
+        public void toggleButtons(boolean enabled) {
+            rollBtn.setEnabled(enabled);
+        }
+
+        public void showRandomFace() {
+            die1.setText(DIE_FACES[rnd.nextInt(6)]);
+            die2.setText(DIE_FACES[rnd.nextInt(6)]);
+        }
+
+        public void setFinalFace(int v1, int v2) {
+            die1.setText(DIE_FACES[v1 - 1]);
+            die2.setText(DIE_FACES[v2 - 1]);
         }
     }
 
     // ================== PLAYER INFO PANEL ==================
-    // CHANGED: Made 'static' to fix instantiation errors
-    public static class PlayerInfoPanel extends JPanel {
-
-        private final ArrayList<JLabel> labels = new ArrayList<>();
-        private final ArrayList<String> names = new ArrayList<>();
-
-        private final JPanel listPanel = new JPanel(new GridLayout(0, 1, 5, 5)); // 0 rows means dynamic
-        private final JButton addBtn = new JButton("Add Player");
-        private final JButton removeBtn = new JButton("Remove Player");
-
-        private int currentPlayer = 0;
+    public class PlayerInfoPanel extends JPanel {
+        private final JPanel listPanel = new JPanel(new GridLayout(0, 1, 5, 5));
 
         public PlayerInfoPanel() {
             setLayout(new BorderLayout(5, 5));
-            setBorder(BorderFactory.createTitledBorder("Players"));
-
-            // Default starting players
-            names.add("Player 1");
-            names.add("Player 2");
-            refreshPlayerList();
-
-            // Button panel
-            JPanel btnPanel = new JPanel(new GridLayout(2, 1, 5, 5));
-            btnPanel.add(addBtn);
-            btnPanel.add(removeBtn);
-
+            setBorder(BorderFactory.createTitledBorder("Current Turn"));
             add(listPanel, BorderLayout.CENTER);
-            add(btnPanel, BorderLayout.SOUTH);
-
-            addBtn.addActionListener(e -> addPlayer());
-            removeBtn.addActionListener(e -> removePlayer());
-
-            updateButtonStates();
         }
 
-        private void refreshPlayerList() {
+        public void refreshUI(String lastActionMessage) {
             listPanel.removeAll();
-            labels.clear();
-
-            for (int i = 0; i < names.size(); i++) {
-                String name = names.get(i);
-                JLabel lbl = new JLabel(name + " — Pos: 1");
+            for (int i = 0; i < playerNames.size(); i++) {
+                String name = playerNames.get(i);
+                int pos = positions.get(i);
+                String text = name + " (Tile " + pos + ")";
+                JLabel lbl = new JLabel(text);
                 lbl.setOpaque(true);
                 lbl.setBorder(BorderFactory.createEtchedBorder());
-                labels.add(lbl);
-                listPanel.add(lbl);
-            }
-
-            highlightCurrentPlayer();
-            revalidate();
-            repaint();
-        }
-
-        private void highlightCurrentPlayer() {
-            for (int i = 0; i < labels.size(); i++) {
-                JLabel lbl = labels.get(i);
-                if (i == currentPlayer) {
-                    lbl.setBackground(new Color(255, 230, 150)); // Highlight color
-                } else {
+                lbl.setHorizontalAlignment(SwingConstants.CENTER);
+                lbl.setPreferredSize(new Dimension(180, 30));
+                
+                if (i == currentPlayerIndex) {
+                    lbl.setBackground(new Color(255, 230, 150)); 
+                    lbl.setText("--> " + text);
+                    lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
+                } 
+                else if (i == (currentPlayerIndex - 1 + playerNames.size()) % playerNames.size()) {
+                    lbl.setBackground(new Color(240, 240, 240));
+                    lbl.setText(text + lastActionMessage);
+                }
+                else {
                     lbl.setBackground(new Color(240, 240, 240));
                 }
+                listPanel.add(lbl);
             }
-        }
-
-        private void addPlayer() {
-            if (names.size() >= 4) return;
-            names.add("Player " + (names.size() + 1));
-            refreshPlayerList();
-            updateButtonStates();
-        }
-
-        private void removePlayer() {
-            if (names.size() <= 2) return;
-            names.remove(names.size() - 1);
-            if (currentPlayer >= names.size()) currentPlayer = 0;
-            refreshPlayerList();
-            updateButtonStates();
-        }
-
-        private void updateButtonStates() {
-            addBtn.setEnabled(names.size() < 4);
-            removeBtn.setEnabled(names.size() > 2);
+            listPanel.revalidate();
+            listPanel.repaint();
         }
     }
 }

@@ -5,7 +5,7 @@ public class Ladder extends Tile {
     private final int climbTo; // tile index to move player up to
 
     public Ladder(int index, int climbTo) {
-        super(index, TileType.LADDER); // make sure TileType has LADDER
+        super(index, TileType.LADDER);
         this.climbTo = climbTo;
     }
 

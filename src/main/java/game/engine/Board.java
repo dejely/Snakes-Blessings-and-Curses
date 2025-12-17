@@ -27,34 +27,58 @@ public class Board {
 
     private void generateDefaultTiles() {
         for (int i = 0; i < size; i++) {
-            tiles.add(new Tile(i, TileType.NORMAL));
+            tiles.add(new NormalTile(i));
         }
     }
 
     private void placeRandomSnakes(int count) {
+        List<Integer> validIndexes = new ArrayList<>();
         int rowSize = (int) Math.sqrt(size);
 
-        List<Integer> validIndexes = new ArrayList<>();
-        // Safety Fix, i < size - 1 (Protects the Winning Tile)
-        for (int i = rowSize; i < size - 1; i++) { 
-            validIndexes.add(i);
+        // Snakes cannot start in the first row or last tile
+        for (int i = rowSize; i < size - 1; i++) {
+            if (tiles.get(i).getType() == TileType.NORMAL)
+                validIndexes.add(i);
         }
 
         Collections.shuffle(validIndexes);
 
         for (int i = 0; i < count && i < validIndexes.size(); i++) {
             int index = validIndexes.get(i);
-            
-            // Ensure we don't overwrite an existing special tile
-            if(tiles.get(index).getType() != TileType.NORMAL) continue;
 
-            // Snake drop location: 1 to index-1
-            int dropTo = index > 1 ? random.nextInt(index - 1) + 1 : 1; //Make sure if index is 0 return 1 up
-
-            // Assuming you have a SnakeTile class
-           // tiles.set(index, new SnakeTile(index, dropTo)); 
+            // Drop must be below current index
+            int dropTo = random.nextInt(index - 1) + 1; 
+            tiles.set(index, new Snake(index, dropTo));
         }
     }
+
+    // Helper for blackout curse
+    public void shuffleSnakes() {
+    List<Integer> snakeIndexes = new ArrayList<>();
+
+    // collect all snake tile indexes
+    for (int i = 0; i < tiles.size(); i++) {
+        if (tiles.get(i).getType() == TileType.SNAKE) {
+            snakeIndexes.add(i);
+        }
+    }
+
+    // shuffle indexes
+    Collections.shuffle(snakeIndexes);
+
+    // move each snake to a new tile
+    int idx = 0;
+    for (int i = 0; i < tiles.size(); i++) {
+        if (tiles.get(i).getType() == TileType.SNAKE) {
+            Snake oldSnake = (Snake) tiles.get(i);
+            int newDropTo = oldSnake.getDropto();
+
+            // place snake on new shuffled index
+            tiles.set(snakeIndexes.get(idx), new Snake(snakeIndexes.get(idx), newDropTo));
+            idx++;
+        }
+    }
+}
 
     // New Method for Ladders/Vines
     private void placeRandomLadders(int count) {
