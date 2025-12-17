@@ -15,8 +15,8 @@ public class Blessing extends Tile {
 
         switch (blessingType) {
             case FORETOLD_FATE -> player.hasForetoldFate = true;
-            case DANIELS_BLESSING -> player.snakesMouthShutTurns = 2;
-            case SWITCHEROO -> player.canSwitcheroo = true;
+            case DANIELS_BLESSING -> player.danielBlessingTurns = 2; 
+            case SWITCHEROO -> player.hasSwitcheroo = true;
             case JACOBS_LADDER -> player.jacobsLadderCharges = 2;
             case SHACKLED -> player.hasShackled = true;
             case SEMENTED -> player.hasSemented = true;

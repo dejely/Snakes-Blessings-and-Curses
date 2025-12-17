@@ -1,11 +1,10 @@
 package game.engine;
 
-public class Tile {
+public abstract class Tile {
+    protected final int index;
+    protected final TileType type;
 
-    // Removed final so we can update it during blackout curse or shuffles
-    private int index; 
-    private final TileType type;
-
+    // Constructor now accepts both index and type
     public Tile(int index, TileType type) {
         this.index = index;
         this.type = type;
@@ -15,17 +14,10 @@ public class Tile {
         return index;
     }
 
-    // Needed for the blackout curse to update tile positions
-    public void setIndex(int index) {
-        this.index = index;
-    }
-
     public TileType getType() {
         return type;
     }
 
-    // Children classes (Snake, Curse) will override this.
-    public void applyEffect(Player player) {
-        System.out.println("Player landed on a normal tile at " + index);
-    }
+    // All tiles define their own effect
+    public abstract void applyEffect(Player player);
 }
