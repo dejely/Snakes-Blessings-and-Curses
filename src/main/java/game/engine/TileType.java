@@ -8,7 +8,7 @@ public enum TileType {
     NORMAL,
     SNAKE,
     LADDER,
-    BOON,
+    BLESSING,
     CURSE,
     HIDDEN_TRICK
 

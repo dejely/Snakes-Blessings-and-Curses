@@ -1,9 +1,25 @@
 package game.engine;
 
-public class Blessing {
+public class Blessing extends Tile {
 
-	public Blessing() {
-		// TODO Auto-generated constructor stub
-	}
+    private final BlessingType blessingType;
 
+    public Blessing(int index, BlessingType blessingType) {
+        super(index, TileType.BLESSING);
+        this.blessingType = blessingType;
+    }
+
+    @Override
+    public void applyEffect(Player player) {
+        System.out.println(player.getName() + " landed on a blessing: " + blessingType);
+
+        switch (blessingType) {
+            case FORETOLD_FATE -> player.hasForetoldFate = true;
+            case DANIELS_BLESSING -> player.snakesMouthShutTurns = 2;
+            case SWITCHEROO -> player.canSwitcheroo = true;
+            case JACOBS_LADDER -> player.jacobsLadderCharges = 2;
+            case SHACKLED -> player.hasShackled = true;
+            case SEMENTED -> player.hasSemented = true;
+        }
+    }
 }

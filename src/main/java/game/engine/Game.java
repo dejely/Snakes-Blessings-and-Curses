@@ -1,89 +1,60 @@
 package game.engine;
 
 import java.util.*;
-import java.util.List;
-import java.util.Random;
 
 public class Game {
-    private final List<Player> players;
-    private final Board board;
-    private final Dice dice = new Dice();
-    private int currentIndex = 0;
-    private boolean finished = false;
 
-    public Game(List<Player> players, Board board) {
-        if (players.size() < 2 || players.size() > 4) {
-            throw new IllegalArgumentException("Game supports 2–4 players");
-        }
-        this.players = players;
-        this.board = board;
-    }
+    public static void main(String[] args) {
 
-    public void startGame() {
-        while (!finished) {
-            nextTurn();
-        }
-    }
+        Scanner sc = new Scanner(System.in);
+        Random random = new Random();
 
-    public void nextTurn() {
-        Player current = players.get(currentIndex);
-
-        current.startTurn(this);
-
-        int roll = dice.roll();
-        roll = current.applyDiceModifiers(roll);
-
-        current.move(roll);
-
-        Tile tile = board.getTile(current.getPosition());
-        tile.onLand(current, this);
-
-        resolveBattles();
-
-        current.endTurn(this);
-
-        checkWinCondition(current);
-
-        advanceTurn();
-    }
-
-    private void resolveBattles() {
-        Map<Integer, List<Player>> byPosition = new HashMap<>();
-
-        for (Player p : players) {
-            byPosition.computeIfAbsent(p.getPosition(), k -> new ArrayList<>()).add(p);
+        // Create players
+        List<Player> players = new ArrayList<>();
+        System.out.print("Enter number of players: ");
+        int playerCount = Integer.parseInt(sc.nextLine());
+        for (int i = 1; i <= playerCount; i++) {
+            System.out.print("Enter name for Player " + i + ": ");
+            players.add(new Player(sc.nextLine().trim()));
         }
 
-        for (List<Player> group : byPosition.values()) {
-            if (group.size() > 1) {
-                resolveBattle(group);
+        // Create board
+        Board board = new Board(50, 5, 5, 5, 5); // size=50, 5 snakes, 5 ladders, 5 curses, 5 blessings
+
+        boolean gameOver = false;
+        while (!gameOver) {
+            for (Player player : players) {
+
+                // Skip turn if Unmovable Man
+                if (player.skipNextTurn) {
+                    System.out.println(player.getName() + " skips this turn due to a curse!");
+                    player.skipNextTurn = false; // consume
+                    continue;
+                }
+
+                // Roll dice
+                int roll = random.nextInt(6) + 1;
+
+                // Apply curse/blessing effects via CheckProperties
+                roll = Dice.CheckProperties(roll, player);
+
+                // Move player
+                player.move(board);
+
+                // Handle end-of-turn counters
+                if (player.barredHeavenTurns > 0) player.barredHeavenTurns--;
+                if (player.blackoutTurns > 0) player.blackoutTurns--;
+                if (player.snakesMouthShutTurns > 0) player.snakesMouthShutTurns--;
+
+                // Check winning condition
+                if (player.getPosition() == board.getSize() - 1) {
+                    System.out.println(player.getName() + " wins!");
+                    gameOver = true;
+                    break;
+                }
             }
         }
-    }
 
-    private void resolveBattle(List<Player> contenders) {
-        Map<Player, Integer> rolls = new HashMap<>();
-        for (Player p : contenders) {
-            rolls.put(p, dice.roll());
-        }
-
-        int max = Collections.max(rolls.values());
-
-        for (Map.Entry<Player, Integer> e : rolls.entrySet()) {
-            int diff = max - e.getValue();
-            if (diff > 0) {
-                e.getKey().move(-diff);
-            }
-        }
-    }
-
-    private void checkWinCondition(Player p) {
-        if (p.getPosition() >= 100) {
-            finished = true;
-        }
-    }
-
-    private void advanceTurn() {
-        currentIndex = (currentIndex + 1) % players.size();
+        sc.close();
     }
 }

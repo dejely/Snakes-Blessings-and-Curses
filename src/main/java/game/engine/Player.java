@@ -1,18 +1,30 @@
 package game.engine;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+public class Player {
 
 public class Player {
     private final String name;
     private int position = 1;
     private final List<Effect> effects = new ArrayList<>();
 
-    public Player(String name) {
-        this.name = name;
-    }
+    // Curses
+    protected boolean hasWhatAreTheOdds = false;
+    protected int barredHeavenTurns = 0;
+    protected boolean skipNextTurn = false;
+    protected boolean pillarOfSalt = false;
+    protected int blackoutTurns = 0;
+
+    // Blessings
+    protected boolean hasForetoldFate = false;
+    protected boolean hasShackled = false;
+    protected boolean canSwitcheroo = false;
+    protected boolean hasSemented = false;
+    protected int jacobsLadderCharges = 0;
+    protected int snakesMouthShutTurns = 0;
+
+	public Player(String name) {
+		this.name = name;
+	}
 
     public String getName() {
         return name;
@@ -26,41 +38,36 @@ public class Player {
         position = Math.min(position + steps, 100);
     }
 
-    public void addEffect(Effect e, Game g) {
-        effects.add(e);
-        e.onApply(this, g);
-    }
-
-    public boolean hasEffect(EffectType type) {
-        return effects.stream().anyMatch(e -> e.getType() == type);
-    }
+    /**
+     * Move the player by rolling the dice (curses/blessings applied automatically)
+     */
+    public void move(Board board) {
+        int roll = Dice.DiceRollRNG(this); // roll dice with all effects
+        System.out.println(getName() + " rolled a " + roll);
 
     public List<Effect> getEffects() {
         return Collections.unmodifiableList(effects);
     }
 
-    public int applyDiceModifiers(int base) {
-        int modified = base;
-        for (Effect e : effects) {
-            modified = e.modifyDice(modified);
-        }
-        return modified;
+        // Keep within board limits
+        if (newPos >= board.getSize()) newPos = board.getSize() - 1;
+        else if (newPos < 0) newPos = 0;
+
+        position = newPos;
+        System.out.println(name + " moved to tile " + position);
+
+        // Apply tile effects
+        Tile tile = board.getTile(position);
+        tile.applyEffect(this);
+        
     }
 
-    public void startTurn(Game g) {
-        effects.forEach(e -> e.onStartTurn(this, g));
-    }
-
-    public void endTurn(Game g) {
-        Iterator<Effect> it = effects.iterator();
-        while (it.hasNext()) {
-            Effect e = it.next();
-            e.onEndTurn(this, g);
-            e.decrement();
-            if (e.getRemainingTurns() <= 0) {
-                e.onExpire(this, g);
-                it.remove();
-            }
-        }
+    // Helper for blackout curse
+    public void applyAllCurses() {
+        hasWhatAreTheOdds = true;
+        barredHeavenTurns = 3;
+        skipNextTurn = true;
+        pillarOfSalt = true;
+        blackoutTurns = 4;
     }
 }
