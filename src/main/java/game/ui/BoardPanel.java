@@ -15,18 +15,18 @@ public class BoardPanel extends JPanel {
     private Image boardImage;
     private List<Integer> playerPositions;
 
-    // 0=Normal, 1=Good (Green), 2=Bad (Red), 3=Finish (Gold)
+    // 0 = Normal, 1 = Good (Green), 2 = Bad (Red), 3 = Finish (Gold), 4 = Ladders, 5 = Snakes
     private final int[][] tileMap = {
-        {3, 0, 1, 0, 0, 0, 1, 2, 0, 0}, 
+        {3, 0, 1, 5, 0, 0, 1, 2, 0, 0}, 
         {0, 2, 0, 0, 1, 1, 0, 2, 0, 0},
-        {1, 0, 2, 0, 0, 0, 1, 0, 0, 1},
-        {0, 1, 0, 0, 2, 0, 0, 0, 0, 1},
+        {1, 0, 2, 0, 0, 0, 1, 5, 0, 1},
+        {0, 1, 0, 4, 2, 0, 0, 4, 0, 1},
         {2, 0, 0, 1, 0, 0, 0, 1, 0, 0},
-        {1, 0, 2, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 2, 1, 0, 0, 0, 0},
-        {0, 2, 0, 0, 0, 0, 0, 0, 2, 1},
+        {1, 0, 2, 5, 0, 0, 4, 0, 0, 1},
+        {1, 4, 0, 0, 2, 1, 0, 0, 0, 0},
+        {0, 2, 0, 0, 0, 0, 5, 4, 2, 1},
         {0, 1, 0, 0, 1, 0, 2, 0, 0, 0},
-        {0, 0, 0, 1, 0, 0, 0, 0, 0, 2}  
+        {0, 0, 0, 1, 0, 4, 0, 0, 0, 2}  
     };
 
     public BoardPanel() {
@@ -36,7 +36,7 @@ public class BoardPanel extends JPanel {
     }
 
     private void loadBoardImage() {
-        URL imgUrl = getClass().getResource("BoardPanel1.jpg");
+        URL imgUrl = getClass().getResource("Updated_Image.png");
         if (imgUrl != null) {
             boardImage = new ImageIcon(imgUrl).getImage();
         }

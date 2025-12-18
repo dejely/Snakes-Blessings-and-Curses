@@ -2,14 +2,15 @@ package game.ui;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import javax.swing.*;
 
 public class ControlsPanel extends JPanel {
 
     private BoardPanel boardPanel;
-    // We need a reference to the Main Window so we can tell it to "Exit"
     private GameWindow gameWindow; 
     
     private List<Integer> positions;
@@ -19,13 +20,18 @@ public class ControlsPanel extends JPanel {
 
     public final DicePanel dicePanel;
     public final PlayerInfoPanel playerInfoPanel;
+    
+    // --- NEW: Map to store where Snakes and Ladders lead ---
+    private final Map<Integer, Integer> portalDestinations = new HashMap<>();
 
-    // CHANGED: Constructor now accepts GameWindow
     public ControlsPanel(GameWindow window, BoardPanel board, int initialPlayerCount) {
-        this.gameWindow = window; // Save the reference
+        this.gameWindow = window; 
         this.boardPanel = board;
         this.positions = new ArrayList<>();
         this.playerNames = new ArrayList<>();
+
+        // Initialize Portals (Start Tile -> End Tile)
+        initializePortals();
 
         for (int i = 1; i <= initialPlayerCount; i++) {
             playerNames.add("Player " + i);
@@ -43,9 +49,9 @@ public class ControlsPanel extends JPanel {
         add(dicePanel);
         add(Box.createVerticalStrut(20));
         add(playerInfoPanel);
-        add(Box.createVerticalGlue()); // Pushes everything up
+        add(Box.createVerticalGlue()); 
         
-        // --- NEW: EXIT BUTTON ---
+        // --- EXIT BUTTON ---
         JButton exitBtn = new JButton("Exit to Menu");
         exitBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         exitBtn.setBackground(new Color(200, 50, 50)); // Red
@@ -53,24 +59,40 @@ public class ControlsPanel extends JPanel {
         exitBtn.setMaximumSize(new Dimension(200, 40));
         
         exitBtn.addActionListener(e -> {
-            // Confirm before quitting
             int choice = JOptionPane.showConfirmDialog(this, 
                 "Are you sure you want to quit the current game?", 
                 "Exit Game", JOptionPane.YES_NO_OPTION);
                 
             if (choice == JOptionPane.YES_OPTION) {
-                gameWindow.returnToMenu(); // Call the method in GameWindow
+                gameWindow.returnToMenu(); 
             }
         });
         
         add(Box.createVerticalStrut(20));
         add(exitBtn);
-        // ------------------------
+        // -------------------
         
         playerInfoPanel.refreshUI("");
     }
 
-    // --- ANIMATION PHASE 1: DICE FLICKER ---
+    // --- NEW: DEFINE SNAKE & LADDER DESTINATIONS ---
+    private void initializePortals() {
+        // --- LADDERS (Go UP) ---
+        // Based on your tileMap array indexes:
+        portalDestinations.put(6, 25);   // Row 1 (Index 5) -> Row 3
+        portalDestinations.put(28, 50);  // Row 3 (Index 7) -> Row 5
+        portalDestinations.put(39, 60);  // Row 4 (Index 1) -> Row 6
+        portalDestinations.put(47, 75);  // Row 5 (Index 6) -> Row 8
+        portalDestinations.put(64, 85);  // Row 7 (Index 3) -> Row 9
+        portalDestinations.put(68, 89);  // Row 7 (Index 7) -> Row 9
+
+        // --- SNAKES (Go DOWN) ---
+        portalDestinations.put(97, 66);  // Row 10 (Index 3) -> Row 7
+        portalDestinations.put(73, 52);  // Row 8 (Index 7) -> Row 6
+        portalDestinations.put(44, 22);  // Row 5 (Index 3) -> Row 3
+        portalDestinations.put(27, 5);   // Row 3 (Index 6) -> Row 1
+    }
+
     public void startDiceAnimation() {
         if (isAnimating) return;
         isAnimating = true;
@@ -94,7 +116,6 @@ public class ControlsPanel extends JPanel {
         diceTimer.start();
     }
 
-    // --- ANIMATION PHASE 2: PLAYER HOPPING ---
     private void startPlayerMovement(int diceValue) {
         int currentPos = positions.get(currentPlayerIndex);
         int targetPos = currentPos + diceValue;
@@ -117,24 +138,43 @@ public class ControlsPanel extends JPanel {
         moveTimer.start();
     }
 
-    // --- PHASE 3: LOGIC CHECKS ---
+    // --- UPDATED LOGIC FOR SNAKES AND LADDERS ---
     private void finishTurnLogic(int landedPos) {
         int tileType = boardPanel.getTileType(landedPos);
         String message = "";
         
-        if (tileType == 1) message = " (GOOD!)";
-        else if (tileType == 2) message = " (BAD!)";
-
+        // 1. Check for Win First
         if (tileType == 3 || landedPos == 100) {
             JOptionPane.showMessageDialog(this, 
                 "CONGRATULATIONS!\n" + playerNames.get(currentPlayerIndex) + " has won!", 
                 "Game Over", JOptionPane.INFORMATION_MESSAGE);
-            
-            // Go back to menu on win
             gameWindow.returnToMenu();
             return;
         }
 
+        // 2. Check for Snakes (5) or Ladders (4)
+        if (portalDestinations.containsKey(landedPos)) {
+            int newDest = portalDestinations.get(landedPos);
+            
+            if (newDest > landedPos) {
+                // It's a Ladder
+                JOptionPane.showMessageDialog(this, "You found a Ladder! Climbing up to Tile " + newDest + "!");
+                message = " (CLIMBED LADDER)";
+            } else {
+                // It's a Snake
+                JOptionPane.showMessageDialog(this, "Oh no! A Snake! Sliding down to Tile " + newDest + "...");
+                message = " (SLID DOWN SNAKE)";
+            }
+            
+            // Move player instantly to new spot
+            landedPos = newDest;
+            positions.set(currentPlayerIndex, landedPos);
+            boardPanel.updatePositions(positions);
+        }
+        else if (tileType == 1) message = " (GOOD TILE)";
+        else if (tileType == 2) message = " (BAD TILE)";
+
+        // 3. End Turn
         currentPlayerIndex = (currentPlayerIndex + 1) % positions.size();
         playerInfoPanel.refreshUI(message);
         

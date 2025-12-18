@@ -13,7 +13,7 @@ public class Game {
     private Player winner;
 
     public Game(int numPlayers) {
-        this.board = new Board(10, 2, 5, 5, 5);
+        this.board = new Board(100);
         this.players = new ArrayList<>();
         this.currentPlayerIndex = 0;
         this.gameRunning = false;
@@ -23,6 +23,15 @@ public class Game {
             players.add(new Player("Player " + (i + 1)));
         }
     }
+
+	public List<Player> getPlayers() {
+    return players;
+}
+
+	// getter
+	public Board getBoard() {
+		return this.board;
+	}
 
     // ---------------- Roll dice for GUI button ----------------
     public void rollDiceForCurrentPlayer() {
