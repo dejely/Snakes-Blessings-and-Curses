@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
+    private final Tile[] tiles = new Tile[100];
 
     private final List<Tile> tiles;
     private final int size;
