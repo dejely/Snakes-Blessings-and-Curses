@@ -1,10 +1,13 @@
 package game.ui;
 
+import game.engine.Game;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import javax.swing.JFrame;
 
 public class GameWindow extends JFrame {
+
+    private Game game; // <--- ADD THIS FIELD
 
     public GameWindow() {
         super("Snakes: Blessings and Curses");
@@ -20,6 +23,11 @@ public class GameWindow extends JFrame {
         setVisible(true);
     }
 
+    // <--- ADD THIS GETTER METHOD
+    public Game getGame() {
+        return this.game;
+    }
+
     private void showWelcomeScreen() {
         // Clear old stuff (like the game board)
         getContentPane().removeAll();
@@ -33,12 +41,14 @@ public class GameWindow extends JFrame {
         repaint();
     }
     
-    // --- NEW: Method to go back to Main Menu ---
     public void returnToMenu() {
         showWelcomeScreen();
     }
 
     public void startGame(int numPlayers) {
+        // <--- INITIALIZE THE GAME HERE
+        this.game = new Game(numPlayers);
+
         getContentPane().removeAll();
         setLayout(new BorderLayout());
 
@@ -47,11 +57,11 @@ public class GameWindow extends JFrame {
         add(board, BorderLayout.CENTER);
 
         // 2. Create Controls
-        // CHANGED: We now pass 'this' (GameWindow) so ControlsPanel can call returnToMenu()
         ControlsPanel controls = new ControlsPanel(this, board, numPlayers);
         controls.setPreferredSize(new Dimension(300, 800)); 
-        add(controls, BorderLayout.WEST);
+        add(controls, BorderLayout.EAST);
 
+        // 3. Refresh
         revalidate();
         repaint();
     }

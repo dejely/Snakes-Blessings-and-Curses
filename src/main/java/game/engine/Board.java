@@ -1,140 +1,97 @@
 package game.engine;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Random;
-
-
 
 public class Board {
     private final Tile[] tiles = new Tile[100];
 
     private final List<Tile> tiles;
     private final int size;
-    private final Random random = new Random();
 
-    public Board(int size, int snakeCount, int ladderCount, int curseCount, int blessingCount) {
+    // Constructor setup
+    public Board(int size) {
         this.size = size;
         this.tiles = new ArrayList<>(size);
 
-        generateDefaultTiles();
-        placeRandomSnakes(snakeCount);
-        placeRandomLadders(ladderCount); 
-        placeRandomCurses(curseCount);
-        placeRandomBlessings(blessingCount);
-    }
-
-    private void generateDefaultTiles() {
+        // 1. Initialize board with Normal Tiles (0-based index)
         for (int i = 0; i < size; i++) {
             tiles.add(new NormalTile(i));
         }
+
+        // 2. Overwrite specific indices with Special Tiles
+        setupFixedTiles();
     }
 
-    private void placeRandomSnakes(int count) {
-        List<Integer> validIndexes = new ArrayList<>();
-        int rowSize = (int) Math.sqrt(size);
-
-        // Snakes cannot start in the first row or last tile
-        for (int i = rowSize; i < size - 1; i++) {
-            if (tiles.get(i).getType() == TileType.NORMAL)
-                validIndexes.add(i);
+    public Tile getTile(int index) {
+        if (index < 0 || index >= tiles.size()) {
+            return null;
         }
-
-        Collections.shuffle(validIndexes);
-
-        for (int i = 0; i < count && i < validIndexes.size(); i++) {
-            int index = validIndexes.get(i);
-
-            // Drop must be below current index
-            int dropTo = random.nextInt(index - 1) + 1; 
-            tiles.set(index, new Snake(index, dropTo));
-        }
+        return tiles.get(index);
     }
 
-    // Helper for blackout curse
-    public void shuffleSnakes() {
-    List<Integer> snakeIndexes = new ArrayList<>();
-
-    // collect all snake tile indexes
-    for (int i = 0; i < tiles.size(); i++) {
-        if (tiles.get(i).getType() == TileType.SNAKE) {
-            snakeIndexes.add(i);
-        }
+    public int getSize() {
+        return size;
     }
 
-    // shuffle indexes
-    Collections.shuffle(snakeIndexes);
-
-    // move each snake to a new tile
-    int idx = 0;
-    for (int i = 0; i < tiles.size(); i++) {
-        if (tiles.get(i).getType() == TileType.SNAKE) {
-            Snake oldSnake = (Snake) tiles.get(i);
-            int newDropTo = oldSnake.getDropto();
-
-            // place snake on new shuffled index
-            tiles.set(snakeIndexes.get(idx), new Snake(snakeIndexes.get(idx), newDropTo));
-            idx++;
+    // Needs fixing
+    private void setupFixedTiles() {
+        // --- BLESSINGS ---
+        // Note: Removed 94 from here as it conflicts with the Curse at 94
+        int[] blessingLocs = {4, 16, 19, 21, 35, 40, 41, 50, 53, 57, 61, 69, 71, 74, 80, 85, 86, 98};
+        
+        for (int loc : blessingLocs) {
+            // We pass (loc - 1) to the constructor so the Tile knows its 0-based index
+            placeTile(loc, new Blessing(loc - 1));
         }
+
+        // --- CURSES ---
+        // 94 is kept here (it will be a Curse)
+        int[] curseLocs = {10, 14, 22, 29, 36, 48, 60, 66, 78, 83, 89, 93};
+        
+        for (int loc : curseLocs) {
+            placeTile(loc, new Curse(loc - 1));
+        }
+
+        // --- LADDERS ---
+        addLadder(6, 26);
+        addLadder(23, 42);
+        addLadder(39, 58);
+        addLadder(44, 54);
+        addLadder(63, 72);
+        addLadder(67, 78);
+
+        // --- SNAKES ---   
+        addSnake(24, 7);
+        addSnake(47, 27); 
+        addSnake(73, 52);
+        addSnake(97, 75);
     }
-}
 
-    // New Method for Ladders/Vines
-    private void placeRandomLadders(int count) {
-        List<Integer> validIndexes = new ArrayList<>();
-        int rowSize = (int) Math.sqrt(size);
-
-        // Ladder cannot start at last row or first tile
-        for (int i = 2; i < size - rowSize; i++) {
-            if (tiles.get(i).getType() == TileType.NORMAL)
-                validIndexes.add(i);
-        }
-
-        Collections.shuffle(validIndexes);
-
-        for (int i = 0; i < count && i < validIndexes.size(); i++) {
-            int index = validIndexes.get(i);
-
-            int maxClimb = size - 2; // cannot climb to last tile
-            int climbTo = (maxClimb > index) ? random.nextInt(maxClimb - index) + index + 1 : size - 1;
-
-            tiles.set(index, new Ladder(index, climbTo));
+    /**
+     * Helper to place a tile based on "Board Number" (1-100).
+     * Handles the 0-based index conversion internally.
+     */
+    private void placeTile(int tileNumber, Tile tile) {
+        if (tileNumber > 0 && tileNumber <= size) {
+            tiles.set(tileNumber - 1, tile);
         }
     }
 
-
-    private void placeRandomCurses(int count) {
-        List<Integer> validIndexes = getRandomTileSlots(count);
-        CurseType[] curseTypes = CurseType.values();
-
-        for (int index : validIndexes) {
-            CurseType type = curseTypes[random.nextInt(curseTypes.length)];
-            tiles.set(index, new Curse(index, type));
-        }
+    /**
+     * Syntactic sugar to make adding Ladders readable.
+     * Takes 1-based Board Numbers.
+     */
+    private void addLadder(int start, int end) {
+        // We calculate (start - 1) and (end - 1) here to keep the setup method clean
+        placeTile(start, new Ladder(start - 1, end - 1));
     }
 
-    private void placeRandomBlessings(int count) {
-        List<Integer> validIndexes = getRandomTileSlots(count);
-        BlessingType[] blessingTypes = BlessingType.values();
-
-        for (int index : validIndexes) {
-            BlessingType type = blessingTypes[random.nextInt(blessingTypes.length)];
-            tiles.set(index, new Blessing(index, type));
-        }
-    }
-
-    private List<Integer> getRandomTileSlots(int count) {
-        List<Integer> indexes = new ArrayList<>();
-
-        // SAFETY FIX: i < size - 1 to protect the winning tile
-        for (int i = 2; i < size - 1; i++) { 
-            if (tiles.get(i).getType() == TileType.NORMAL) {
-                indexes.add(i);
-            }
-        }
-
-        Collections.shuffle(indexes);
-        return indexes.subList(0, Math.min(count, indexes.size()));
+    /**
+     * Syntactic sugar to make adding Snakes readable.
+     * Takes 1-based Board Numbers.
+     */
+    private void addSnake(int start, int end) {
+        placeTile(start, new Snake(start - 1, end - 1));
     }
 }
