@@ -3,6 +3,8 @@ import java.util.Random;
 
 import game.exceptions.OutofBoundsException;
 
+import game.exceptions.OutofBoundsException;
+
 public class Player {
 
 public class Player {
@@ -77,6 +79,7 @@ public class Player {
         return Collections.unmodifiableList(effects);
     }
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
         // Do not exceed board limit
         if (newPos > board.getSize() - 1) newPos = board.getSize() - 1;
@@ -121,6 +124,10 @@ public class Player {
         System.out.println(getName() + " is affected by Job’s Suffering! All curses applied.");
     }
 }
+=======
+    
+}
+>>>>>>> Stashed changes
 =======
     
 }

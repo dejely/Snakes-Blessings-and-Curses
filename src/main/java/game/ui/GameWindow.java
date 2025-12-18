@@ -12,7 +12,10 @@ import javax.swing.JPanel;
 public class GameWindow extends JFrame {
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
     private Game game;
     private Image backgroundImage;
 
@@ -47,7 +50,10 @@ public class GameWindow extends JFrame {
     }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
     private void loadBackground() {
         try {
             // Looks into src/main/resources inside the project jar
@@ -85,7 +91,10 @@ public class GameWindow extends JFrame {
 
     public void startGame(int numPlayers) {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
         this.game = new Game(numPlayers);
 
 >>>>>>> Stashed changes

@@ -4,6 +4,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import java.util.Random;
 import javax.swing.*;
 
@@ -143,6 +144,16 @@ import game.engine.Game;
 import game.engine.Player;
 
 public class ControlsPanel extends JPanel {
+=======
+import java.net.URL;
+import javax.swing.*;
+import javax.swing.border.*;
+import game.engine.Dice;
+import game.engine.Game;
+import game.engine.Player;
+
+public class ControlsPanel extends JPanel {
+>>>>>>> Stashed changes
     private GameWindow gameWindow;
     private BoardPanel boardPanel;
     private JPanel playerListPanel; 
@@ -246,6 +257,7 @@ public class ControlsPanel extends JPanel {
                     return;
                 }
             } catch (Exception e) { }
+<<<<<<< Updated upstream
 >>>>>>> Stashed changes
         }
         startRollAnimation();
@@ -283,8 +295,13 @@ public class ControlsPanel extends JPanel {
 
             c.gridx = 0; c.gridy = 1; c.gridwidth = 2; c.fill = GridBagConstraints.HORIZONTAL;
             add(rollBtn, c);
+=======
+>>>>>>> Stashed changes
         }
+        startRollAnimation();
+    }
 
+<<<<<<< Updated upstream
         public void toggleButtons(boolean enabled) {
             rollBtn.setEnabled(enabled);
         }
@@ -298,6 +315,8 @@ public class ControlsPanel extends JPanel {
             die1.setText(DIE_FACES[v1 - 1]);
             die2.setText(DIE_FACES[v2 - 1]);
 =======
+=======
+>>>>>>> Stashed changes
     private void startRollAnimation() {
         rollButton.setEnabled(false);
         
@@ -357,6 +376,17 @@ public class ControlsPanel extends JPanel {
             }
         });
         moveTimer.start();
+<<<<<<< Updated upstream
+=======
+    }
+
+    private void updateBoardPositions(Game g, Player active, int vPos) {
+        List<Integer> positions = new ArrayList<>();
+        for (Player p : g.getPlayers()) {
+            positions.add(p == active ? vPos : p.getPosition());
+        }
+        boardPanel.updatePositions(positions);
+>>>>>>> Stashed changes
     }
 
     private void updateBoardPositions(Game g, Player active, int vPos) {
@@ -446,6 +476,73 @@ public class ControlsPanel extends JPanel {
         playerListPanel.revalidate(); 
         playerListPanel.repaint();
 >>>>>>> Stashed changes
+    }
+
+    private void showGameSummary(Game game) {
+        List<Player> standings = new ArrayList<>(game.getPlayers());
+        standings.sort((p1, p2) -> Integer.compare(p2.getPosition(), p1.getPosition()));
+
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBackground(new Color(25, 25, 30)); 
+        mainPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
+
+        try {
+            URL imgUrl = getClass().getResource("/GameEnd.png");
+            if (imgUrl != null) {
+                ImageIcon icon = new ImageIcon(imgUrl);
+                Image scaledImg = icon.getImage().getScaledInstance(420, 240, Image.SCALE_SMOOTH);
+                JLabel imageLabel = new JLabel(new ImageIcon(scaledImg));
+                imageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                mainPanel.add(imageLabel);
+                mainPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading victory image: " + e.getMessage());
+        }
+
+        StringBuilder summaryText = new StringBuilder("THE ASCENSION IS COMPLETE\n\n");
+        for (int i = 0; i < standings.size(); i++) {
+            Player p = standings.get(i);
+            String rank = (i == 0) ? "🏆 VICTOR: " : (i + 1) + ". ";
+            summaryText.append(rank).append(p.getName())
+                       .append(" — Tile ").append(p.getPosition()).append("\n");
+        }
+
+        JTextArea area = new JTextArea(summaryText.toString());
+        area.setFont(new Font("Serif", Font.BOLD, 18));
+        area.setForeground(TEXT_GOLD);
+        area.setBackground(new Color(35, 35, 40));
+        area.setEditable(false);
+        area.setMargin(new Insets(15, 15, 15, 15));
+        area.setBorder(new LineBorder(LAVA_ORANGE, 2));
+        
+        mainPanel.add(area);
+        JOptionPane.showMessageDialog(this, mainPanel, "The Chronicle Ends", JOptionPane.PLAIN_MESSAGE);
+    }
+
+    private JLabel createDieLabel() {
+        JLabel lbl = new JLabel("\u2680", SwingConstants.CENTER); 
+        lbl.setFont(new Font("SansSerif", Font.PLAIN, 60)); 
+        lbl.setPreferredSize(new Dimension(80, 80));
+        lbl.setOpaque(true); lbl.setBackground(Color.WHITE); 
+        lbl.setForeground(OBSI_BLACK);
+        lbl.setBorder(new LineBorder(LAVA_ORANGE, 2));
+        return lbl;
+    }
+
+    private String getDicePips(int v) {
+        return switch (v) {
+            case 1 -> "\u2680"; case 2 -> "\u2681"; case 3 -> "\u2682";
+            case 4 -> "\u2683"; case 5 -> "\u2684"; case 6 -> "\u2685";
+            default -> "?";
+        };
+    }
+
+    private TitledBorder createRelicBorder(String t) {
+        TitledBorder tb = BorderFactory.createTitledBorder(new LineBorder(LAVA_ORANGE, 1), t);
+        tb.setTitleColor(TEXT_GOLD); tb.setTitleFont(new Font("Serif", Font.BOLD, 13));
+        return tb;
     }
 
     private void showGameSummary(Game game) {

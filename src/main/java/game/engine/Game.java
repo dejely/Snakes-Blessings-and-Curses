@@ -48,11 +48,15 @@ public class Game {
         if (currentPlayer.skipNextTurn) {
             currentPlayer.skipNextTurn = false;
             log.append("Frozen! Skipping turn.");
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
             nextTurn();
             return;
         }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         // Roll dice using player effects
         int roll = Dice.DiceRollRNG(currentPlayer); // Dice controlled by Game
@@ -162,6 +166,84 @@ public class Game {
             log.append("\n").append(e.getMessage());
         }
 
+=======
+        try {
+            // --- VALIDATION LOGIC (Where InvalidMoveException is thrown) ---
+            
+            // 1. Barred Heaven: Restricted movement
+            if (currentPlayer.barredHeavenTurns > 0 && forcedRoll > 10) {
+                throw new InvalidMoveException("BARRED HEAVEN: You cannot use Foretold Fate to jump more than 10 tiles while cursed!");
+            }
+
+            // 2. Shackled: Limit choice
+            if (currentPlayer.isShackled && forcedRoll > 6) {
+                throw new InvalidMoveException("SHACKLED: Your chains are too heavy to choose a destiny that far!");
+            }
+
+            // 3. Game State: Cannot move if game is over
+            if (!gameRunning) {
+                throw new InvalidMoveException("THE CHRONICLE IS CLOSED: The game has already ended.");
+            }
+
+            // --- END VALIDATION ---
+
+            int roll;
+            if (forcedRoll > 0 && currentPlayer.hasForetoldFate) {
+                roll = forcedRoll;
+                lastDie1 = forcedRoll / 2;
+                lastDie2 = forcedRoll - lastDie1;
+                currentPlayer.hasForetoldFate = false;
+                log.append("Invoked Foretold Fate: [ ").append(getDicePips(roll)).append(" ] (").append(roll).append(" steps)");
+            } else {
+                lastDie1 = Dice.rollSingleDie();
+                lastDie2 = Dice.rollSingleDie();
+                roll = Dice.applyModifiers(lastDie1 + lastDie2, currentPlayer);
+                log.append("Rolled ").append(Math.abs(roll));
+                if (roll < 0) log.append(" (Cursed Reverse!)");
+            }
+            decrementStatusEffects(currentPlayer);
+
+            int targetPos = currentPlayer.getPosition() + roll;
+
+            // OutofBoundsException trigger
+            if (targetPos > 100) {
+                throw new OutofBoundsException("The gates of Heaven are closed to this roll! Stay at " + currentPlayer.getPosition());
+            }
+            if (targetPos < 1) targetPos = 1;
+
+            currentPlayer.setPosition(targetPos);
+            log.append("\nMoved to tile ").append(currentPlayer.getPosition());
+
+            Tile landedTile = board.getTile(currentPlayer.getPosition() - 1);
+            String effectMsg = landedTile.applyEffect(currentPlayer, this);
+            log.append(effectMsg);
+
+            handleSementedEffect(currentPlayer, roll, log);
+
+            if (currentPlayer.hasSwitcheroo) {
+                handleSwitcheroo(currentPlayer, log);
+            }
+
+            if (currentPlayer.getPosition() == 100) {
+                winner = currentPlayer;
+                gameRunning = false;
+                log.append("\n*** ").append(currentPlayer.getName()).append(" HAS REACHED GLORY! ***");
+            }
+
+        } catch (InvalidMoveException e) {
+            // This is now reachable!
+            log.append("\n[!] INVALID ACTION: ").append(e.getMessage());
+            // We do NOT call nextTurn() here if you want them to try again, 
+            // OR we call it to punish the wasted attempt. Usually, in Foretold Fate, 
+            // we let them roll normally instead:
+            log.append("\nProphecy failed. Rolling naturally instead...");
+            return processTurn(-1); 
+
+        } catch (OutofBoundsException e) {
+            log.append("\n").append(e.getMessage());
+        }
+
+>>>>>>> Stashed changes
         if (gameRunning) nextTurn();
         return log.toString();
     }
@@ -199,11 +281,15 @@ public class Game {
         
         int myOldPos = p.getPosition();
         int theirOldPos = target.getPosition();
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
         p.setPosition(theirOldPos);
         target.setPosition(myOldPos);
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         if (!aheadPlayers.isEmpty()) {
             Random rand = new Random();
@@ -230,16 +316,29 @@ public class Game {
         log.append("\n(Switcheroo) You are already leading the pack; there is no one ahead to swap with.");
     }
 
+=======
+        log.append("\n(Switcheroo) Fate intervened! You swapped places with ")
+           .append(target.getName())
+           .append(" (Tile ").append(theirOldPos).append(" <-> ").append(myOldPos).append(").");
+    } else {
+        log.append("\n(Switcheroo) You are already leading the pack; there is no one ahead to swap with.");
+    }
+
+>>>>>>> Stashed changes
     // 3. Always consume the effect
     p.hasSwitcheroo = false;
 }
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     private void nextTurn() {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
         System.out.println("Next turn: " + players.get(currentPlayerIndex).getName());
     }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
     // ---------------- Game over check ----------------
     public boolean isGameOver() {
@@ -253,6 +352,8 @@ public class Game {
     }
 }
 =======
+=======
+>>>>>>> Stashed changes
      private String getDicePips(int v) {
                 return switch (v) {
                     case 1 -> "\u2680";
@@ -264,5 +365,9 @@ public class Game {
                     default -> "?";
                 };
             }
+<<<<<<< Updated upstream
+}
+>>>>>>> Stashed changes
+=======
 }
 >>>>>>> Stashed changes
