@@ -57,6 +57,7 @@ public class GameWindow extends JFrame {
 <<<<<<< Updated upstream
 =======
 =======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
     private void loadBackground() {
