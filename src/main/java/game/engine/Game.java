@@ -13,7 +13,7 @@ public class Game {
     private Player winner;
 
     public Game(int numPlayers) {
-        this.board = new Board(100, 2, 5, 5, 5);
+        this.board = new Board(100);
         this.players = new ArrayList<>();
         this.currentPlayerIndex = 0;
         this.gameRunning = false;

@@ -2,41 +2,43 @@ package game.ui;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import javax.swing.*;
-
-import game.engine.Blessing;
-import game.engine.Curse;
-import game.engine.Dice;
-import game.engine.Game;
-import game.engine.Ladder;
-import game.engine.Player;
-import game.engine.Snake;
-import game.engine.Tile;
 
 public class ControlsPanel extends JPanel {
 
     private BoardPanel boardPanel;
-    // We need a reference to the Main Window so we can tell it to "Exit"
     private GameWindow gameWindow; 
     
-    private final List<Player> players;
-    private Game game;
+    private List<Integer> positions;
+    private List<String> playerNames;
     private int currentPlayerIndex = 0; 
     private boolean isAnimating = false; 
 
     public final DicePanel dicePanel;
     public final PlayerInfoPanel playerInfoPanel;
+    
+    // --- NEW: Map to store where Snakes and Ladders lead ---
+    private final Map<Integer, Integer> portalDestinations = new HashMap<>();
 
-    // CHANGED: Constructor now accepts GameWindow
     public ControlsPanel(GameWindow window, BoardPanel board, int initialPlayerCount) {
-        this.gameWindow = window; // Save the reference
+        this.gameWindow = window; 
         this.boardPanel = board;
-        this.game = new Game(initialPlayerCount);
-        this.players = game.getPlayers();
-        boardPanel.updatePositionsFromPlayers(players);
+        this.positions = new ArrayList<>();
+        this.playerNames = new ArrayList<>();
 
+        // Initialize Portals (Start Tile -> End Tile)
+        initializePortals();
+
+        for (int i = 1; i <= initialPlayerCount; i++) {
+            playerNames.add("Player " + i);
+            positions.add(1); 
+        }
+        
+        boardPanel.updatePositions(positions);
 
         this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -47,9 +49,9 @@ public class ControlsPanel extends JPanel {
         add(dicePanel);
         add(Box.createVerticalStrut(20));
         add(playerInfoPanel);
-        add(Box.createVerticalGlue()); // Pushes everything up
+        add(Box.createVerticalGlue()); 
         
-        // --- NEW: EXIT BUTTON ---
+        // --- EXIT BUTTON ---
         JButton exitBtn = new JButton("Exit to Menu");
         exitBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         exitBtn.setBackground(new Color(200, 50, 50)); // Red
@@ -57,32 +59,40 @@ public class ControlsPanel extends JPanel {
         exitBtn.setMaximumSize(new Dimension(200, 40));
         
         exitBtn.addActionListener(e -> {
-            // Confirm before quitting
             int choice = JOptionPane.showConfirmDialog(this, 
                 "Are you sure you want to quit the current game?", 
                 "Exit Game", JOptionPane.YES_NO_OPTION);
                 
             if (choice == JOptionPane.YES_OPTION) {
-                gameWindow.returnToMenu(); // Call the method in GameWindow
+                gameWindow.returnToMenu(); 
             }
         });
         
         add(Box.createVerticalStrut(20));
         add(exitBtn);
-        // ------------------------
+        // -------------------
         
         playerInfoPanel.refreshUI("");
     }
 
-    private void updatePlayerPositions() {
-        List<Integer> pos = new ArrayList<>();
-        for (Player p : players) {
-            pos.add(p.getPosition());
-        }
-        boardPanel.updatePositions(pos);
+    // --- NEW: DEFINE SNAKE & LADDER DESTINATIONS ---
+    private void initializePortals() {
+        // --- LADDERS (Go UP) ---
+        // Based on your tileMap array indexes:
+        portalDestinations.put(6, 25);   // Row 1 (Index 5) -> Row 3
+        portalDestinations.put(28, 50);  // Row 3 (Index 7) -> Row 5
+        portalDestinations.put(39, 60);  // Row 4 (Index 1) -> Row 6
+        portalDestinations.put(47, 75);  // Row 5 (Index 6) -> Row 8
+        portalDestinations.put(64, 85);  // Row 7 (Index 3) -> Row 9
+        portalDestinations.put(68, 89);  // Row 7 (Index 7) -> Row 9
+
+        // --- SNAKES (Go DOWN) ---
+        portalDestinations.put(97, 66);  // Row 10 (Index 3) -> Row 7
+        portalDestinations.put(73, 52);  // Row 8 (Index 7) -> Row 6
+        portalDestinations.put(44, 22);  // Row 5 (Index 3) -> Row 3
+        portalDestinations.put(27, 5);   // Row 3 (Index 6) -> Row 1
     }
 
-    // --- ANIMATION PHASE 1: DICE FLICKER ---
     public void startDiceAnimation() {
         if (isAnimating) return;
         isAnimating = true;
@@ -94,61 +104,80 @@ public class ControlsPanel extends JPanel {
         diceTimer.addActionListener(e -> {
             dicePanel.showRandomFace();
             ticks[0]++;
-
+            
             if (ticks[0] >= 20) {
                 diceTimer.stop();
-
-                Player currentPlayer = players.get(currentPlayerIndex);
-                int roll = Dice.DiceRollRNG(currentPlayer); // roll using engine dice
-                dicePanel.setFinalFace((roll + 1)/2, (roll + 1)/2); // optional visual adjustment
-
-                // Move player via engine
-                currentPlayer.move(roll, game.getBoard()); // engine handles curses/blessings
-                updatePlayerPositions();
-
-                finishTurnLogic();
+                int v1 = new Random().nextInt(6) + 1;
+                int v2 = new Random().nextInt(6) + 1;
+                dicePanel.setFinalFace(v1, v2);
+                startPlayerMovement(v1 + v2);
             }
         });
         diceTimer.start();
     }
 
-    // --- ANIMATION PHASE 2: PLAYER HOPPING ---
-    // removed for the meantime
+    private void startPlayerMovement(int diceValue) {
+        int currentPos = positions.get(currentPlayerIndex);
+        int targetPos = currentPos + diceValue;
+        if (targetPos > 100) targetPos = 100;
 
-    // --- PHASE 3: LOGIC CHECKS ---
-    private void finishTurnLogic() {
-        Player currentPlayer = players.get(currentPlayerIndex);
-        int landedPos = currentPlayer.getPosition();
-        Tile landedTile = game.getBoard().getTile(landedPos);
+        final int finalTarget = targetPos;
+        Timer moveTimer = new Timer(300, null);
+        
+        moveTimer.addActionListener(e -> {
+            int current = positions.get(currentPlayerIndex);
+            
+            if (current < finalTarget) {
+                positions.set(currentPlayerIndex, current + 1);
+                boardPanel.updatePositions(positions);
+            } else {
+                ((Timer)e.getSource()).stop();
+                finishTurnLogic(finalTarget);
+            }
+        });
+        moveTimer.start();
+    }
 
+    // --- UPDATED LOGIC FOR SNAKES AND LADDERS ---
+    private void finishTurnLogic(int landedPos) {
+        int tileType = boardPanel.getTileType(landedPos);
         String message = "";
-
-        if (landedTile instanceof Blessing) {
-            message = " (BLESSING!)";
-        } else if (landedTile instanceof Curse) {
-            message = " (CURSE!)";
-        } else if (landedTile instanceof Snake) {
-            message = " (SNAKE!)";
-        } else if (landedTile instanceof Ladder) {
-            message = " (LADDER!)";
-        }
-
-        // Win check
-        if (landedPos >= game.getBoard().getSize() - 1) {
-            JOptionPane.showMessageDialog(
-                this,
-                "CONGRATULATIONS!\n" + currentPlayer.getName() + " has won!",
-                "Game Over",
-                JOptionPane.INFORMATION_MESSAGE
-            );
+        
+        // 1. Check for Win First
+        if (tileType == 3 || landedPos == 100) {
+            JOptionPane.showMessageDialog(this, 
+                "CONGRATULATIONS!\n" + playerNames.get(currentPlayerIndex) + " has won!", 
+                "Game Over", JOptionPane.INFORMATION_MESSAGE);
             gameWindow.returnToMenu();
             return;
         }
 
-        // Next player
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-        playerInfoPanel.refreshUI(message);
+        // 2. Check for Snakes (5) or Ladders (4)
+        if (portalDestinations.containsKey(landedPos)) {
+            int newDest = portalDestinations.get(landedPos);
+            
+            if (newDest > landedPos) {
+                // It's a Ladder
+                JOptionPane.showMessageDialog(this, "You found a Ladder! Climbing up to Tile " + newDest + "!");
+                message = " (CLIMBED LADDER)";
+            } else {
+                // It's a Snake
+                JOptionPane.showMessageDialog(this, "Oh no! A Snake! Sliding down to Tile " + newDest + "...");
+                message = " (SLID DOWN SNAKE)";
+            }
+            
+            // Move player instantly to new spot
+            landedPos = newDest;
+            positions.set(currentPlayerIndex, landedPos);
+            boardPanel.updatePositions(positions);
+        }
+        else if (tileType == 1) message = " (GOOD TILE)";
+        else if (tileType == 2) message = " (BAD TILE)";
 
+        // 3. End Turn
+        currentPlayerIndex = (currentPlayerIndex + 1) % positions.size();
+        playerInfoPanel.refreshUI(message);
+        
         isAnimating = false;
         dicePanel.toggleButtons(true);
     }
@@ -206,9 +235,9 @@ public class ControlsPanel extends JPanel {
 
         public void refreshUI(String lastActionMessage) {
             listPanel.removeAll();
-            for (int i = 0; i < players.size(); i++) {
-                String name = players.get(i).getName();
-                int pos = players.get(i).getPosition();;
+            for (int i = 0; i < playerNames.size(); i++) {
+                String name = playerNames.get(i);
+                int pos = positions.get(i);
                 String text = name + " (Tile " + pos + ")";
                 JLabel lbl = new JLabel(text);
                 lbl.setOpaque(true);
@@ -221,7 +250,7 @@ public class ControlsPanel extends JPanel {
                     lbl.setText("--> " + text);
                     lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
                 } 
-                else if (i == (currentPlayerIndex - 1 + players.size()) % players.size()) {
+                else if (i == (currentPlayerIndex - 1 + playerNames.size()) % playerNames.size()) {
                     lbl.setBackground(new Color(240, 240, 240));
                     lbl.setText(text + lastActionMessage);
                 }

@@ -11,6 +11,20 @@ public class Curse extends Tile {
         this.curseType = curseType;
     }
 
+    public Curse(int index) {
+        super(index, TileType.CURSE);
+        this.curseType = randomType();
+    }
+
+        private CurseType randomType() {
+        CurseType[] values = CurseType.values();
+        return values[new Random().nextInt(values.length)];
+    }
+
+    public CurseType getCurseType() {
+        return curseType;
+    }
+    
     @Override
     public void applyEffect(Player player) {
         // Check if player has Jacob’s Ladder blessing first
