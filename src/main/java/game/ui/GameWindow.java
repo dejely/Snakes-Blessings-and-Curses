@@ -13,7 +13,10 @@ public class GameWindow extends JFrame {
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
     private Game game;
@@ -51,6 +54,8 @@ public class GameWindow extends JFrame {
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
 =======
 =======
 >>>>>>> Stashed changes
@@ -92,7 +97,10 @@ public class GameWindow extends JFrame {
     public void startGame(int numPlayers) {
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
         this.game = new Game(numPlayers);

@@ -198,6 +198,9 @@ public class Board {
     private void addSnake(int start, int end) {
         placeTile(start, new Snake(start, end));
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes

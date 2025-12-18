@@ -29,6 +29,9 @@ public class Ladder extends Tile {
         // Previous code printed 'climbTo', which was the 0-based index (e.g., 51 instead of 52).
         return " -> LADDER! Climbed up to " + (climbTo) + ".";
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
