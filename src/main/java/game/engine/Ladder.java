@@ -21,7 +21,7 @@ public class Ladder extends Tile {
         }
 
         // Move player up the ladder
-        player.setPosition(climbTo);
+        player.setPosition(climbTo - 1);
     }
 
     public int getClimbTo() {
