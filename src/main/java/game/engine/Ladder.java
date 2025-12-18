@@ -16,15 +16,10 @@ public class Ladder extends Tile {
             return " -> Landed on LADDER, but Barred Heaven prevented the climb!";
         }
 
-
-        // Move player up the ladder
-        player.setPosition(climbTo - 1);
-
         player.setPosition(climbTo);
         
         // FIX: We add +1 here so the text matches the visual board numbers (1-100)
         // Previous code printed 'climbTo', which was the 0-based index (e.g., 51 instead of 52).
-        return " -> LADDER! Climbed up to " + (climbTo + 1) + ".";
-
+        return " -> LADDER! Climbed up to " + (climbTo) + ".";
     }
 }

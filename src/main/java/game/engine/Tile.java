@@ -6,22 +6,17 @@ public abstract class Tile {
 
     public Tile(int index, TileType type) {
         this.index = index;
+        this.type = type; // ✅ FIX
     }
 
-    public int getIndex() { return index; }
-    public TileType getType() { return type; }
+    public int getIndex() {
+        return index;
+    }
 
-    // NOW RETURNS A MESSAGE STRING AND TAKES GAME CONTEXT
+    public TileType getType() {
+        return type;
+    }
+
+    // Returns a message describing what happened on this tile
     public abstract String applyEffect(Player player, Game game);
-}
-
-class NormalTile extends Tile {
-    public NormalTile(int index) {
-        super(index, TileType.NORMAL);
-    }
-
-    @Override
-    public String applyEffect(Player player, Game game) {
-        return ""; // No message for normal tiles to keep chat clean
-    }
 }
