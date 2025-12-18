@@ -1,5 +1,7 @@
 package game.engine;
 
+import java.util.Random;
+
 public class Blessing extends Tile {
 
     private final BlessingType blessingType;
@@ -7,6 +9,20 @@ public class Blessing extends Tile {
     public Blessing(int index, BlessingType blessingType) {
         super(index, TileType.BLESSING);
         this.blessingType = blessingType;
+    }
+
+    public Blessing(int index) {
+        super(index, TileType.BLESSING);
+        this.blessingType = randomType();
+    }
+
+    private BlessingType randomType() {
+        BlessingType[] values = BlessingType.values();
+        return values[new Random().nextInt(values.length)];
+    }
+
+    public BlessingType getBlessingType() {
+        return blessingType;
     }
 
     @Override
