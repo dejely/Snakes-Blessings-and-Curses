@@ -16,7 +16,6 @@ public class Ladder extends Tile {
             return " -> Landed on LADDER, but Barred Heaven prevented the climb!";
         }
 
-
         // Move player up the ladder
         player.setPosition(climbTo - 1);
 
