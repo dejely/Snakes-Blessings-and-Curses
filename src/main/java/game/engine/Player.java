@@ -20,7 +20,7 @@ public class Player {
     
     // --- BLESSINGS / STATUS EFFECTS ---
     public boolean hasForetoldFate = false;
-    public boolean isShackled = false; // DEBUFF: -2 to roll
+    public boolean hasShackled = false; // DEBUFF: -2 to roll
     public boolean hasSwitcheroo = false;
     public int jacobsLadderCharges = 0;
     public int danielBlessingTurns = 0;
@@ -82,7 +82,7 @@ public class Player {
         if (jacobsLadderCharges > 0) statusList.add("Jacob's Ladder: " + jacobsLadderCharges);
         
         if (skipNextTurn) statusList.add("Frozen");
-        if (isShackled) statusList.add("Shackled");
+        if (hasShackled) statusList.add("Shackled");
         if (hasPillarOfSalt) statusList.add("Pillar of Salt");
         if (hasForetoldFate) statusList.add("Foretold Fate");
         if (hasSwitcheroo) statusList.add("Switcheroo Ready");

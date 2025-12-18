@@ -53,7 +53,7 @@ public class Game {
             }
 
             // 2. Shackled: Limit choice
-            if (currentPlayer.isShackled && forcedRoll > 6) {
+            if (currentPlayer.hasShackled && forcedRoll > 6) {
                 throw new InvalidMoveException("SHACKLED: Your chains are too heavy to choose a destiny that far!");
             }
 
@@ -64,9 +64,13 @@ public class Game {
 
             // --- END VALIDATION ---
 
+            int die1 = Dice.rollSingleDie();
+            int die2 = Dice.rollSingleDie();
             int roll;
-            if (currentPlayer.hasForetoldFate = true) {
-                roll = forcedRoll;
+            if (currentPlayer.hasForetoldFate == true) {
+                roll = die1 + die2;
+                int moveAmount = Dice.applyModifiers(roll, currentPlayer);
+
                 lastDie1 = forcedRoll / 2;
                 lastDie2 = forcedRoll - lastDie1;
                 currentPlayer.hasForetoldFate = false;

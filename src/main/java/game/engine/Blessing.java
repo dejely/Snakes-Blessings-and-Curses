@@ -10,9 +10,8 @@ public class Blessing extends Tile {
     }
 
     @Override
-    public void applyEffect(Player player) {
-        System.out.println(player.getName() + " landed on a blessing: " + blessingType);
-
+    public String applyEffect(Player player, Game game) {
+        
         switch (blessingType) {
             case FORETOLD_FATE -> player.hasForetoldFate = true;
             case DANIELS_BLESSING -> player.danielBlessingTurns = 2; 
@@ -21,5 +20,6 @@ public class Blessing extends Tile {
             case SHACKLED -> player.hasShackled = true;
             case SEMENTED -> player.hasSemented = true;
         }
+		return player.getName() + " landed on a blessing: " + blessingType;
     }
 }

@@ -13,31 +13,26 @@ public class Snake extends Tile {
 		return dropTo;
 	}
 
-	@Override
-	public void applyEffect(Player player) {
+	public String applyEffect(Player player, Game game) {
 		// Pillar of Salt curse effect
 		if (player.hasPillarOfSalt) {
-        System.out.println(player.getName() + " triggered Pillar of Salt! Will skip next turn.");
         player.skipNextTurn = true;
         player.hasPillarOfSalt = false;
-		return;
+		return player.getName() + " triggered Pillar of Salt! Will skip next turn.";
     }
 	
 		// Blackout curse effect
-	    if (player.blackoutTurns > 0) {
-        System.out.println("Blackout revealed the snake at " + getIndex() + "!");
-    }
 
 	    // Daniel’s Blessing blocks snake
 		if (player.danielBlessingTurns > 0) {
-			System.out.println(player.getName() + " is protected by Daniel's Blessing! Snake ignored.");
 			player.danielBlessingTurns--; // decrement counter
-			return; // skip snake effect
+			return player.getName() + " is protected by Daniel's Blessing! Snake ignored."; // skip snake effect
 	}
 
 		// Normal snake effect
-		System.out.println("Snake! Slide down from " + getIndex() + " to " + dropTo);
         player.setPosition(dropTo);
+		return "Snake! Slide down from " + getIndex() + " to " + dropTo;
 	}
+
 
 }

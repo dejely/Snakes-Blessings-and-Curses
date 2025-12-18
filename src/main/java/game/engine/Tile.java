@@ -4,9 +4,9 @@ public abstract class Tile {
     protected final int index;
     protected final TileType type;
 
-    // Constructor accepts both index and type
     public Tile(int index, TileType type) {
         this.index = index;
+        this.type = type; // ✅ FIX
     }
 
     public int getIndex() {
@@ -17,17 +17,6 @@ public abstract class Tile {
         return type;
     }
 
-    // All tiles define their own effect
-    public abstract void applyEffect(Player player);
-}
-
-class NormalTile extends Tile {
-    public NormalTile(int index) {
-        super(index, TileType.NORMAL);
-    }
-
-    @Override
-    public void applyEffect(Player player) {
-        System.out.println(player.getName() + " landed on a normal tile.");
-    }
+    // Returns a message describing what happened on this tile
+    public abstract String applyEffect(Player player, Game game);
 }
