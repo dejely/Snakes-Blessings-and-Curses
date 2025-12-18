@@ -30,9 +30,23 @@ public class BoardPanel extends JPanel {
     };
 
     public BoardPanel() {
+<<<<<<< Updated upstream
         this.setPreferredSize(new Dimension(800, 800));
         loadBoardImage();
         playerPositions = new ArrayList<>();
+=======
+        this.playerPositions = Collections.emptyList();
+        try {
+            URL imgUrl = ClassLoader.getSystemResource("BoardPanel1.png");
+            if (imgUrl != null) {
+                this.boardImage = new ImageIcon(imgUrl).getImage();
+            } else {
+                System.err.println("Error: BoardPanel1.png not found in classpath!");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+>>>>>>> Stashed changes
     }
 
     private void loadBoardImage() {
@@ -112,10 +126,23 @@ public class BoardPanel extends JPanel {
 
         for (int i = 0; i < playerPositions.size(); i++) {
             int tileId = playerPositions.get(i);
+<<<<<<< Updated upstream
             int rowFromBottom = (tileId - 1) / 10; 
             int col = (tileId - 1) % 10;           
             if (rowFromBottom % 2 == 1) col = 9 - col;
             int drawRow = 9 - rowFromBottom; 
+=======
+            
+            int rowFromBottom = (tileId - 1) / 10;
+            int col = (tileId - 1) % 10;
+            
+            // Even rows go Right, Odd rows go Left
+            if (rowFromBottom % 2 == 1) {
+                col = 9 - col;
+            }
+            
+            int drawRow = 9 - rowFromBottom; // Swing Y starts at top
+>>>>>>> Stashed changes
             
             int xCenter = (col * cellW) + (cellW - tokenSize) / 2;
             int yCenter = (drawRow * cellH) + (cellH - tokenSize) / 2;

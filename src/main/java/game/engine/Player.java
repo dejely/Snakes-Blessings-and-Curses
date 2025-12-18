@@ -1,6 +1,8 @@
 package game.engine;
 import java.util.Random;
 
+import game.exceptions.OutofBoundsException;
+
 public class Player {
 
 public class Player {
@@ -35,8 +37,34 @@ public class Player {
         return position;
     }
 
+<<<<<<< Updated upstream
     public void move(int steps) {
         position = Math.min(position + steps, 100);
+=======
+    // Moves player and returns the Tile they landed on
+    public Tile move(int roll, Board board) throws OutofBoundsException {
+    int newPos = position + roll;
+
+    // THROW the exception if they go too far
+    if (newPos > board.getSize()) {
+        this.position = board.getSize(); // We still move them to the end
+        throw new OutofBoundsException("Player tried to move past " + board.getSize());
+    }
+
+    this.position = newPos;
+
+    if (position > 0) {
+        return board.getTile(position - 1);
+    }
+    return null;
+}
+
+    public void applyAllCurses() {
+        whatAreTheOddsTurns = 2; // Fixed: Set to 2 turns
+        barredHeavenTurns = 3;
+        skipNextTurn = true;
+        hasPillarOfSalt = true;
+>>>>>>> Stashed changes
     }
 
     /**
@@ -48,6 +76,7 @@ public class Player {
     public List<Effect> getEffects() {
         return Collections.unmodifiableList(effects);
     }
+<<<<<<< Updated upstream
 
         // Do not exceed board limit
         if (newPos > board.getSize() - 1) newPos = board.getSize() - 1;
@@ -92,3 +121,7 @@ public class Player {
         System.out.println(getName() + " is affected by Job’s Suffering! All curses applied.");
     }
 }
+=======
+    
+}
+>>>>>>> Stashed changes
