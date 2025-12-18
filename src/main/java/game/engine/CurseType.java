@@ -5,6 +5,5 @@ public enum CurseType {
     BARRED_HEAVEN,        // next 3 turns, ladders won't work
     UNMOVABLE_MAN,        // skip next turn
     PILLAR_OF_SALT,       // next turn lost if eaten by snake
-    BLACKOUT,             // snakes hidden/moved for 4-5 turns
     JOBS_SUFFERING        // apply all curses
 }
