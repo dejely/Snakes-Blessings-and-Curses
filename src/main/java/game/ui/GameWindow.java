@@ -1,5 +1,6 @@
 package game.ui;
 
+import game.engine.Game;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -11,18 +12,9 @@ import javax.swing.JPanel;
 
 public class GameWindow extends JFrame {
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
     private Game game;
     private Image backgroundImage;
 
->>>>>>> Stashed changes
     public GameWindow() {
         super("Snakes: Blessings and Curses");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -52,14 +44,6 @@ public class GameWindow extends JFrame {
         setVisible(true);
     }
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
     private void loadBackground() {
         try {
             // Looks into src/main/resources inside the project jar
@@ -76,7 +60,6 @@ public class GameWindow extends JFrame {
         return this.game;
     }
 
->>>>>>> Stashed changes
     private void showWelcomeScreen() {
         getContentPane().removeAll();
         
@@ -90,23 +73,13 @@ public class GameWindow extends JFrame {
         repaint();
     }
     
-    // --- NEW: Method to go back to Main Menu ---
     public void returnToMenu() {
         showWelcomeScreen();
     }
 
     public void startGame(int numPlayers) {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
         this.game = new Game(numPlayers);
 
->>>>>>> Stashed changes
         getContentPane().removeAll();
         setLayout(new BorderLayout());
 
@@ -117,11 +90,10 @@ public class GameWindow extends JFrame {
         add(board, BorderLayout.CENTER);
 
         // 2. Create Controls
-        // CHANGED: We now pass 'this' (GameWindow) so ControlsPanel can call returnToMenu()
         ControlsPanel controls = new ControlsPanel(this, board, numPlayers);
         controls.setOpaque(false);
         controls.setPreferredSize(new Dimension(300, 800)); 
-        add(controls, BorderLayout.WEST);
+        add(controls, BorderLayout.EAST);
 
         revalidate();
         repaint();

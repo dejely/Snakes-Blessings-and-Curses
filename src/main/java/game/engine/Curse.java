@@ -28,7 +28,6 @@ public class Curse extends Tile {
             case BARRED_HEAVEN -> player.barredHeavenTurns = 3; // fixed 3 turns
             case UNMOVABLE_MAN -> player.skipNextTurn = true;
             case PILLAR_OF_SALT -> player.hasPillarOfSalt = true; 
-            case BLACKOUT -> player.blackoutTurns = 4 + random.nextInt(2); // random 4–5
             case JOBS_SUFFERING -> player.applyAllCurses(); // applies all fixed durations
         }
     }
