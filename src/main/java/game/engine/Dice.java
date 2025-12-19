@@ -23,9 +23,9 @@ public class Dice {
         }
 
         // 2. Shackled
-        if (player.hasShackled) {
+        if (player.isShackled) {
             int newRoll = Math.max(0, rollSum - 2);
-            player.hasShackled = false; 
+            player.isShackled = false; 
             return newRoll;
         }
 

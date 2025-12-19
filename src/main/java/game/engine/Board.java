@@ -2,7 +2,6 @@ package game.engine;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class Board {
 
@@ -37,19 +36,18 @@ public class Board {
     // Needs fixing
     private void setupFixedTiles() {
         // --- BLESSINGS ---
-    	Random rnd = new Random();
-    	BlessingType[] bTypes = BlessingType.values();
-    	CurseType[] cTypes = CurseType.values();
         int[] blessingLocs = {4, 16, 19, 30, 35, 40, 41, 50, 53, 57, 62 , 70, 71, 74, 80, 85, 86, 94, 98};
         
         for (int loc : blessingLocs) {
-            placeTile(loc, new Blessing(loc-1, bTypes[rnd.nextInt(bTypes.length)]));
+            // We pass (loc - 1) to the constructor so the Tile knows its 0-based index
+            placeTile(loc, new Blessing(loc - 1));
         }
+
         // --- CURSES ---
         int[] curseLocs = {10, 14, 22, 29, 36, 43, 60, 65, 78, 82, 88, 93};
         
         for (int loc : curseLocs) {
-            placeTile(loc, new Curse(loc-1, cTypes[rnd.nextInt(cTypes.length)]));
+            placeTile(loc, new Curse(loc - 1));
         }
 
         // --- LADDERS ---
@@ -81,7 +79,7 @@ public class Board {
      * Takes 1-based Board Numbers.
      */
     private void addLadder(int start, int end) {
-        placeTile(start, new Ladder(start-1 , end-1));
+        placeTile(start, new Ladder(start - 1, end));
     }
 
     /**
@@ -89,6 +87,6 @@ public class Board {
      * Takes 1-based Board Numbers.
      */
     private void addSnake(int start, int end) {
-        placeTile(start, new Snake(start-1, end-1));
+        placeTile(start, new Snake(start - 1, end));
     }
 }

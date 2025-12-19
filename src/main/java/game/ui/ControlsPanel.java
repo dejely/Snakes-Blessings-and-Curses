@@ -18,6 +18,7 @@ public class ControlsPanel extends JPanel {
     private JLabel die1Label, die2Label; 
     private JButton rollButton;
     private Timer animationTimer; 
+    
 
     // Synchronized dice values
     private int officialDie1 = 1;
@@ -105,7 +106,6 @@ public class ControlsPanel extends JPanel {
             try {
                 int steps = Integer.parseInt(input);
                 if (steps >= 1 && steps <= 12) {
-                    // Manually set visual dice for prophesied move
                     officialDie1 = steps / 2;
                     officialDie2 = steps - officialDie1;
                     die1Label.setText(getDicePips(officialDie1));
@@ -120,37 +120,91 @@ public class ControlsPanel extends JPanel {
 
     private void startRollAnimation() {
         rollButton.setEnabled(false);
+        Game game = gameWindow.getGame();
         
-        // PRE-DETERMINE THE MOVE HERE
-        officialDie1 = Dice.rollSingleDie();
-        officialDie2 = Dice.rollSingleDie();
+        // 1. Let the engine process the turn FIRST. 
+        // We pass 0 because it's a normal roll (not forced).
+        String result = game.processTurn(0); 
+        
+        // 2. Get the ACTUAL dice values that the engine just used.
+        officialDie1 = game.getLastDie1();
+        officialDie2 = game.getLastDie2();
         int totalMove = officialDie1 + officialDie2;
 
         long startTime = System.currentTimeMillis();
         animationTimer = new Timer(50, e -> {
-            // Visual "blur" during animation
+            // Random visual flicker
             die1Label.setText(getDicePips(Dice.rollSingleDie()));
             die2Label.setText(getDicePips(Dice.rollSingleDie()));
             
             if (System.currentTimeMillis() - startTime > 600) {
                 ((Timer)e.getSource()).stop();
                 
-                // LOCK IN THE VISUALS TO MATCH THE MOVE
+                // 3. Set the labels to the ACTUAL results from the engine
                 die1Label.setText(getDicePips(officialDie1));
                 die2Label.setText(getDicePips(officialDie2));
                 
-                finalizeTurn(totalMove);
+                // 4. Update the history and move the piece
+                // Note: We don't call processTurn again here!
+                finishVisualTurn(result); 
             }
         });
         animationTimer.start();
+    }
+
+    private void finishVisualTurn(String result) {
+        Game game = gameWindow.getGame();
+        // We need the player who just moved
+        // Since processTurn already called nextTurn(), the 'active' player is 
+        // actually the one before the current index.
+        int previousIndex = (game.getPlayers().indexOf(game.getCurrentPlayer()) + game.getPlayers().size() - 1) % game.getPlayers().size();
+        Player movingPlayer = game.getPlayers().get(previousIndex);
+        
+        // 1. Log the result
+        historyArea.append("> " + result + "\n");
+        historyArea.setCaretPosition(historyArea.getDocument().getLength());
+
+        // 2. Setup the "Walking" Animation
+        // We need to know where they started. Since the engine already moved them, 
+        // we calculate the 'start' by subtracting the roll from their current pos.
+        int endPos = movingPlayer.getPosition();
+        int rollAmount = game.getLastDie1() + game.getLastDie2();
+        int startPos = endPos - rollAmount; 
+
+        final int[] visualPos = {startPos};
+        
+        Timer moveTimer = new Timer(150, e -> {
+            if (visualPos[0] < endPos) {
+                visualPos[0]++;
+            } else if (visualPos[0] > endPos) {
+                visualPos[0]--;
+            }
+
+            // Update the board visually
+            updateBoardPositions(game, movingPlayer, visualPos[0]);
+
+            // When the "walk" is finished
+            if (visualPos[0] == endPos) {
+                ((Timer)e.getSource()).stop();
+                refreshUI(); // Update the sidebar text
+                
+                if (game.isGameOver()) {
+                    showGameEnd();
+                    gameWindow.returnToMenu();
+                } else {
+                    // Check for your Semented interaction now that movement is done
+                    checkForSementedInteraction(movingPlayer, game);
+                    rollButton.setEnabled(true);
+                }
+            }
+        });
+        moveTimer.start();
     }
 
     private void finalizeTurn(int forcedMove) {
         Game game = gameWindow.getGame();
         Player current = game.getCurrentPlayer();
         int start = current.getPosition();
-        
-        // Pass the pre-calculated total to the engine
         String result = game.processTurn(forcedMove);
         int end = current.getPosition();
 
@@ -161,17 +215,16 @@ public class ControlsPanel extends JPanel {
         Timer moveTimer = new Timer(100, e -> {
             if (visualPos[0] < end) visualPos[0]++;
             else if (visualPos[0] > end) visualPos[0]--;
-            
             updateBoardPositions(game, current, visualPos[0]);
 
             if (visualPos[0] == end) {
                 ((Timer)e.getSource()).stop();
                 refreshUI();
-                
                 if (game.isGameOver()) {
-                    showGameSummary(game);
+                    showGameEnd();
                     gameWindow.returnToMenu();
                 } else {
+                    checkForSementedInteraction(current, game);
                     rollButton.setEnabled(true);
                 }
             }
@@ -179,11 +232,77 @@ public class ControlsPanel extends JPanel {
         moveTimer.start();
     }
 
+    private void showGameEnd() {
+        rollButton.setEnabled(false);
+        JDialog winDialog = new JDialog(gameWindow, "The Ascension", true);
+        winDialog.setSize(600, 800);
+        winDialog.setLocationRelativeTo(gameWindow);
+
+        JPanel content = new JPanel() {
+            Image endBg;
+            {
+                try {
+                    URL imgUrl = getClass().getResource("/GameEnd.png");
+                    if (imgUrl == null) imgUrl = getClass().getResource("/GameEnd.jpg");
+                    if (imgUrl != null) endBg = new ImageIcon(imgUrl).getImage();
+                } catch (Exception e) { e.printStackTrace(); }
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (endBg != null) {
+                    g.drawImage(endBg, 0, 0, getWidth(), getHeight(), this);
+                } else {
+                    g.setColor(Color.BLACK);
+                    g.fillRect(0, 0, getWidth(), getHeight());
+                }
+
+                g.setColor(Color.WHITE);
+                g.setFont(new Font("Serif", Font.BOLD, 28)); 
+                
+                List<Player> sortedPlayers = new ArrayList<>(gameWindow.getGame().getPlayers());
+                sortedPlayers.sort((p1, p2) -> Integer.compare(p2.getPosition(), p1.getPosition()));
+
+                // --- ADJUSTED ALIGNMENT VALUES ---
+                int leftMargin = 140; 
+                // MOVED UP: Starts at 360 to align with the Top (Gold) Slot
+                int currentY = 360;  
+                int spacing = 100;   
+
+                for (int i = 0; i < sortedPlayers.size(); i++) {
+                    Player p = sortedPlayers.get(i);
+                    String line = p.getName() + " (Tile " + p.getPosition() + ")";
+                    g.drawString(line, leftMargin, currentY);
+                    currentY += spacing;
+                }
+            }
+        };
+        winDialog.add(content);
+        winDialog.setVisible(true);
+    }
+
+    private void checkForSementedInteraction(Player current, Game game) {
+        if (current.hasSemented && current.sementedTarget == null) {
+            List<Player> targets = new ArrayList<>();
+            for (Player p : game.getPlayers()) {
+                if (p.getPosition() > current.getPosition()) targets.add(p);
+            }
+            if (!targets.isEmpty()) {
+                Object[] options = targets.stream().map(Player::getName).toArray();
+                int choice = JOptionPane.showOptionDialog(this, "Semented Blessing! Who to bond with?", 
+                    "Select Target", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                if (choice >= 0) {
+                    current.sementedTarget = targets.get(choice);
+                    JOptionPane.showMessageDialog(this, "Bonded with " + current.sementedTarget.getName() + "!");
+                }
+            }
+        }
+    }
+
     private void updateBoardPositions(Game g, Player active, int vPos) {
         List<Integer> positions = new ArrayList<>();
-        for (Player p : g.getPlayers()) {
-            positions.add(p == active ? vPos : p.getPosition());
-        }
+        for (Player p : g.getPlayers()) positions.add(p == active ? vPos : p.getPosition());
         boardPanel.updatePositions(positions);
     }
 
@@ -198,74 +317,23 @@ public class ControlsPanel extends JPanel {
         for (int i = 0; i < allPlayers.size(); i++) {
             Player p = allPlayers.get(i);
             Color playerColor = pColors[i % pColors.length];
-
             JPanel card = new JPanel(new BorderLayout());
             card.setOpaque(true);
             card.setBackground(p == current ? new Color(60, 45, 35) : new Color(40, 40, 45, 180));
-            card.setBorder(new CompoundBorder(
-                new LineBorder(p == current ? LAVA_ORANGE : Color.DARK_GRAY, 2), 
-                new EmptyBorder(5, 10, 5, 10)
-            ));
-
+            card.setBorder(new CompoundBorder(new LineBorder(p == current ? LAVA_ORANGE : Color.DARK_GRAY, 2), new EmptyBorder(5, 10, 5, 10)));
             JLabel name = new JLabel(p.getName().toUpperCase());
             name.setForeground(playerColor);
             name.setFont(new Font("Serif", Font.BOLD, 14));
-
             JLabel status = new JLabel("TILE: " + p.getPosition() + " " + p.getStatusDisplay());
             status.setFont(new Font("SansSerif", Font.PLAIN, 11));
             status.setForeground(Color.LIGHT_GRAY);
-
             card.add(name, BorderLayout.NORTH);
             card.add(status, BorderLayout.SOUTH);
-            
             playerListPanel.add(card);
             playerListPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         }
         playerListPanel.revalidate(); 
         playerListPanel.repaint();
-    }
-
-    private void showGameSummary(Game game) {
-        List<Player> standings = new ArrayList<>(game.getPlayers());
-        standings.sort((p1, p2) -> Integer.compare(p2.getPosition(), p1.getPosition()));
-
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.setBackground(new Color(25, 25, 30)); 
-        mainPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
-
-        try {
-            URL imgUrl = getClass().getResource("/GameEnd.png");
-            if (imgUrl != null) {
-                ImageIcon icon = new ImageIcon(imgUrl);
-                Image scaledImg = icon.getImage().getScaledInstance(420, 240, Image.SCALE_SMOOTH);
-                JLabel imageLabel = new JLabel(new ImageIcon(scaledImg));
-                imageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-                mainPanel.add(imageLabel);
-                mainPanel.add(Box.createRigidArea(new Dimension(0, 15)));
-            }
-        } catch (Exception e) {
-            System.err.println("Error loading victory image: " + e.getMessage());
-        }
-
-        StringBuilder summaryText = new StringBuilder("THE ASCENSION IS COMPLETE\n\n");
-        for (int i = 0; i < standings.size(); i++) {
-            Player p = standings.get(i);
-            String rank = (i == 0) ? "🏆 VICTOR: " : (i + 1) + ". ";
-            summaryText.append(rank).append(p.getName())
-                       .append(" — Tile ").append(p.getPosition()).append("\n");
-        }
-
-        JTextArea area = new JTextArea(summaryText.toString());
-        area.setFont(new Font("Serif", Font.BOLD, 18));
-        area.setForeground(TEXT_GOLD);
-        area.setBackground(new Color(35, 35, 40));
-        area.setEditable(false);
-        area.setMargin(new Insets(15, 15, 15, 15));
-        area.setBorder(new LineBorder(LAVA_ORANGE, 2));
-        
-        mainPanel.add(area);
-        JOptionPane.showMessageDialog(this, mainPanel, "The Chronicle Ends", JOptionPane.PLAIN_MESSAGE);
     }
 
     private JLabel createDieLabel() {
@@ -279,11 +347,7 @@ public class ControlsPanel extends JPanel {
     }
 
     private String getDicePips(int v) {
-        return switch (v) {
-            case 1 -> "\u2680"; case 2 -> "\u2681"; case 3 -> "\u2682";
-            case 4 -> "\u2683"; case 5 -> "\u2684"; case 6 -> "\u2685";
-            default -> "?";
-        };
+        return switch (v) { case 1 -> "\u2680"; case 2 -> "\u2681"; case 3 -> "\u2682"; case 4 -> "\u2683"; case 5 -> "\u2684"; case 6 -> "\u2685"; default -> "?"; };
     }
 
     private TitledBorder createRelicBorder(String t) {
