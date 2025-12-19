@@ -3,6 +3,7 @@ package game.engine;
 import java.util.ArrayList;
 import java.util.List;
 
+import game.exceptions.InvalidMoveException;
 import game.exceptions.OutofBoundsException;
 
 public class Player {
@@ -41,19 +42,30 @@ public class Player {
         this.position = position;
     }
 
-    public Tile move(int steps, Board board) throws OutofBoundsException, game.exceptions.InvalidMoveException {
+ // In Player.java
+
+    public Tile move(int steps, Board board) throws OutofBoundsException, InvalidMoveException {
+        // Calculate the theoretical new position
         int newPos = position + steps;
-        
-        if (newPos > board.getSize()) {
-            throw new OutofBoundsException(name + " tried to move past " + board.getSize());
+
+        // --- BACKTRACKING SYSTEM (Bounce Logic) ---
+        if (newPos > 100) {
+            int overshoot = newPos - 100;
+            newPos = 100 - overshoot;
+            // Example: At 99, Roll 2 -> Target 101 -> Overshoot 1 -> NewPos 99
+        }
+        // ------------------------------------------
+
+        // Safety clamp for negative movement (e.g. curses)
+        if (newPos < 1) {
+            newPos = 1;
         }
 
+        // Apply the new position
         this.position = newPos;
 
-        if (position > 0) {
-            return board.getTile(position - 1);
-        }
-        return null;
+        // Return the tile we landed on (index is position - 1)
+        return board.getTile(position - 1);
     }
 
     public void applyAllCurses() {

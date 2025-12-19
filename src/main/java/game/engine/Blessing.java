@@ -40,7 +40,24 @@ public class Blessing extends Tile {
             }
             case SWITCHEROO -> {
                 player.hasSwitcheroo = true;
-                msg.append("\n(Switcheroo) Swap places with a random player higher than you.");
+                
+                // Fixed 
+                List<Player> ahead = new ArrayList<>();
+                for (Player p : game.getPlayers()) {
+                    if (p.getPosition() > player.getPosition()) {
+                        ahead.add(p);
+                    }
+                }
+
+                if (!ahead.isEmpty()) {
+                    Player target = ahead.get(new Random().nextInt(ahead.size()));
+                    int temp = player.getPosition();
+                    player.setPosition(target.getPosition());
+                    target.setPosition(temp);
+                    msg.append("\n(Switcheroo) SWAP! You traded places with ").append(target.getName()).append("!");
+                } else {
+                    msg.append("\n(Switcheroo) No one is ahead of you. The magic fizzles!");
+                }
             }
             case JACOBS_LADDER -> {
                 player.jacobsLadderCharges = 2;
@@ -55,7 +72,7 @@ public class Blessing extends Tile {
                 msg.append("\n(Shackled) Chains OTHER players! Subtract 2 pips from their next roll.");
             }
             case SEMENTED -> {
-                // LOGIC FIX: Check who is actually ahead
+                // Check who is actually ahead
                 List<Player> targets = new ArrayList<>();
                 for (Player p : game.getPlayers()) {
                     if (p.getPosition() > player.getPosition()) {

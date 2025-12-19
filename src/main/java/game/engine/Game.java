@@ -32,6 +32,7 @@ public class Game {
     public Player getCurrentPlayer() { return players.get(currentPlayerIndex); }
     public boolean isGameOver() { return !gameRunning; }
     public Player getWinner() { return winner; }
+    public Board getBoard() {return board;}
 
     public String processTurn(int forcedRoll) {
         Player currentPlayer = getCurrentPlayer();

@@ -50,7 +50,13 @@ public class Curse extends Tile {
                 msg += " (If you hit a snake next, you turn to stone)";
             }
             case JOBS_SUFFERING -> {
-                player.applyAllCurses();
+                //Explicitly set values to 3 to match individual curses ---
+                player.whatAreTheOddsTurns = 3; 
+                player.barredHeavenTurns = 3;
+                player.skipNextTurn = true;
+                player.hasPillarOfSalt = true;
+
+                
                 msg += " (You suffer from EVERYTHING!)";
             }
         }
