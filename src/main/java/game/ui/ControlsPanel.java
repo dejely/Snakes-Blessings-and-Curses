@@ -119,22 +119,58 @@ public class ControlsPanel extends JPanel {
 
     private void startRollAnimation() {
         rollButton.setEnabled(false);
-        officialDie1 = Dice.rollSingleDie();
-        officialDie2 = Dice.rollSingleDie();
+        Game game = gameWindow.getGame();
+        
+        // 1. Let the engine process the turn FIRST. 
+        // We pass 0 because it's a normal roll (not forced).
+        String result = game.processTurn(0); 
+        
+        // 2. Get the ACTUAL dice values that the engine just used.
+        officialDie1 = game.getLastDie1();
+        officialDie2 = game.getLastDie2();
         int totalMove = officialDie1 + officialDie2;
 
         long startTime = System.currentTimeMillis();
         animationTimer = new Timer(50, e -> {
+            // Random visual flicker
             die1Label.setText(getDicePips(Dice.rollSingleDie()));
             die2Label.setText(getDicePips(Dice.rollSingleDie()));
+            
             if (System.currentTimeMillis() - startTime > 600) {
                 ((Timer)e.getSource()).stop();
+                
+                // 3. Set the labels to the ACTUAL results from the engine
                 die1Label.setText(getDicePips(officialDie1));
                 die2Label.setText(getDicePips(officialDie2));
-                finalizeTurn(totalMove);
+                
+                // 4. Update the history and move the piece
+                // Note: We don't call processTurn again here!
+                finishVisualTurn(result); 
             }
         });
         animationTimer.start();
+    }
+
+    private void finishVisualTurn(String result) {
+        Game game = gameWindow.getGame();
+        Player current = game.getPlayers().get((game.getPlayers().indexOf(game.getCurrentPlayer()) + game.getPlayers().size() - 1) % game.getPlayers().size());
+        // Note: The engine already moved the player and switched the 'current' index.
+        // We just need to animate the movement now.
+        
+        historyArea.append("> " + result + "\n");
+        historyArea.setCaretPosition(historyArea.getDocument().getLength());
+
+        // Simple refresh to show the piece at the final spot
+        // (Or you can keep your moveTimer logic if you want the walking animation)
+        refreshUI();
+        boardPanel.updatePositions(game.getPlayers().stream().map(Player::getPosition).toList());
+        
+        if (game.isGameOver()) {
+            showGameEnd();
+            gameWindow.returnToMenu();
+        } else {
+            rollButton.setEnabled(true);
+        }
     }
 
     private void finalizeTurn(int forcedMove) {
