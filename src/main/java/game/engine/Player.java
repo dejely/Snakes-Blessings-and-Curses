@@ -1,92 +1,100 @@
 package game.engine;
-import java.util.Random;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import game.exceptions.OutofBoundsException;
 
 public class Player {
 
     private String name;
-    private int position = 1;   // starting tile
+    private int position = 1;
 
-    // Curses
-    protected boolean hasWhatAreTheOdds = false;
-    protected int barredHeavenTurns = 0;
-    protected boolean skipNextTurn = false;
-    protected boolean hasPillarOfSalt = false;
-    protected int blackoutTurns = 0;
+    // --- CURSES ---
+    public int whatAreTheOddsTurns = 0; 
+    public int barredHeavenTurns = 0;
+    public boolean skipNextTurn = false;
+    public boolean hasPillarOfSalt = false;
+    
+    // --- BLESSINGS / STATUS EFFECTS ---
+    public boolean hasForetoldFate = false;
+    public boolean isShackled = false; 
+    public boolean hasSwitcheroo = false;
+    public int jacobsLadderCharges = 0;
+    public int danielBlessingTurns = 0;
 
-    // Blessings
-    protected boolean hasForetoldFate = false;
-    protected boolean hasShackled = false;
-    protected boolean hasSwitcheroo = false;
-    protected boolean hasSemented = false;
-    protected int jacobsLadderCharges = 0;
-    protected int danielBlessingTurns = 0;
+    // --- SEMENTED ---
+    public boolean hasSemented = false; 
+    public Player sementedTarget = null; 
+    public int sementedTurns = 0;       
 
-	public Player(String name) {
-		this.name = name;
-	}
-
-     // getters
-    public String getName() {
-        return name;
+    public Player(String name) {
+        this.name = name;
     }
 
-    public int getPosition() {
-        return position;
-    }
+    public String getName() { return name; }
+    public int getPosition() { return position; }
 
-    // setter
     public void setPosition(int position) {
+        if (position < 1) position = 1;
+        if (position > 100) position = 100;
         this.position = position;
     }
 
-    /**
-     * Move the player by rolling the dice (curses/blessings applied automatically)
-     */
-    public void move(int roll, Board board) {
-        System.out.println(name + " rolled a " + roll);
-
-        int newPos = position + roll;
-
-        // Do not exceed board limit
-        if (newPos > board.getSize() - 1) newPos = board.getSize() - 1;
+    public Tile move(int steps, Board board) throws OutofBoundsException, game.exceptions.InvalidMoveException {
+        int newPos = position + steps;
+        
+        if (newPos > board.getSize()) {
+            throw new OutofBoundsException(name + " tried to move past " + board.getSize());
+        }
 
         this.position = newPos;
-        System.out.println(name + " moved to tile " + position);
 
-        // Apply tile effect
-        Tile tile = board.getTile(position);
-        tile.applyEffect(this);
+        if (position > 0) {
+            return board.getTile(position - 1);
+        }
+        return null;
     }
 
-    // Helper/implementation for Job's suffering curse
     public void applyAllCurses() {
-        Random random = new Random();
+        whatAreTheOddsTurns = 2; 
+        barredHeavenTurns = 3;
+        skipNextTurn = true;
+        hasPillarOfSalt = true;
+    }
 
-        // What Are The Odds
-        if (!hasWhatAreTheOdds) {
-            hasWhatAreTheOdds = true;
+    /**
+     * Decrements counters for all active effects.
+     * Called by Game.java at the end of every turn.
+     */
+    public void onTurnEnd() {
+        if (whatAreTheOddsTurns > 0) whatAreTheOddsTurns--;
+        if (barredHeavenTurns > 0) barredHeavenTurns--;
+        if (danielBlessingTurns > 0) danielBlessingTurns--;
+        
+        if (sementedTurns > 0) {
+            sementedTurns--;
+            if (sementedTurns == 0) {
+                hasSemented = false;
+                sementedTarget = null;
+            }
         }
+    }
 
-        // Barred Heaven (fixed 3 turns)
-        if (barredHeavenTurns <= 0) {
-            barredHeavenTurns = 3;
-        }
+    public String getStatusDisplay() {
+        List<String> statusList = new ArrayList<>();
 
-        // Unmovable Man (skip next turn)
-        if (!skipNextTurn) {
-            skipNextTurn = true;
-        }
+        if (whatAreTheOddsTurns > 0) statusList.add("What are the Odds: " + whatAreTheOddsTurns);
+        if (barredHeavenTurns > 0) statusList.add("Barred Heaven: " + barredHeavenTurns);
+        if (danielBlessingTurns > 0) statusList.add("Daniel's Blessing: " + danielBlessingTurns);
+        if (sementedTurns > 0) statusList.add("Semented: " + sementedTurns);
+        if (jacobsLadderCharges > 0) statusList.add("Jacob's Ladder: " + jacobsLadderCharges);
+        
+        if (skipNextTurn) statusList.add("Frozen");
+        if (isShackled) statusList.add("Shackled");
+        if (hasForetoldFate) statusList.add("Foretold Fate");
+        if (hasPillarOfSalt) statusList.add("Pillar of Salt");
 
-        // Pillar of Salt
-        if (!hasPillarOfSalt) {
-            hasPillarOfSalt = true;
-        }
-
-        // Blackout (random 4–5 turns)
-        if (blackoutTurns <= 0) {
-            blackoutTurns = 4 + random.nextInt(2);
-        }
-
-        System.out.println(getName() + " is affected by Job’s Suffering! All curses applied.");
+        return statusList.isEmpty() ? "" : String.join(", ", statusList);
     }
 }

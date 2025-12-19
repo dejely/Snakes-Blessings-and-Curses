@@ -1,58 +1,106 @@
 package game.ui;
 
+import game.engine.Game;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.net.URL;
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 public class GameWindow extends JFrame {
+
+    private Game game;
+    private Image backgroundImage;
 
     public GameWindow() {
         super("Snakes: Blessings and Curses");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
+        // Maven-specific background loading
+        loadBackground();
+        
+        // Set a custom content pane to draw the background across the whole window
+        setContentPane(new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (backgroundImage != null) {
+                    // Scales the image to fill the entire window
+                    g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+                }
+            }
+        });
+
         // Start by showing the Welcome Screen
         showWelcomeScreen();
         
         // Basic Window Settings
-        setResizable(true);
+        setResizable(false);
         setSize(1100, 850); 
         setLocationRelativeTo(null); // Center on screen
         setVisible(true);
     }
 
+    private void loadBackground() {
+        try {
+            // Looks into src/main/resources inside the project jar
+            URL imgUrl = getClass().getResource("/background.jpg");
+            if (imgUrl != null) {
+                backgroundImage = new ImageIcon(imgUrl).getImage();
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading window background: " + e.getMessage());
+        }
+    }
+
+    public Game getGame() {
+        return this.game;
+    }
+
     private void showWelcomeScreen() {
-        // Clear old stuff (like the game board)
         getContentPane().removeAll();
         
         // Create fresh Welcome Panel
+        // Ensure WelcomePanel is non-opaque to see the GameWindow background through it
         WelcomePanel welcome = new WelcomePanel(this);
+        welcome.setOpaque(false); 
         add(welcome);
         
-        // Refresh visuals
         revalidate();
         repaint();
     }
     
-    // --- NEW: Method to go back to Main Menu ---
     public void returnToMenu() {
         showWelcomeScreen();
     }
 
     public void startGame(int numPlayers) {
+        this.game = new Game(numPlayers);
+
         getContentPane().removeAll();
         setLayout(new BorderLayout());
 
         // 1. Create Board
         BoardPanel board = new BoardPanel();
+        board.setOpaque(false); 
         add(board, BorderLayout.CENTER);
 
         // 2. Create Controls
-        // CHANGED: We now pass 'this' (GameWindow) so ControlsPanel can call returnToMenu()
         ControlsPanel controls = new ControlsPanel(this, board, numPlayers);
+        controls.setOpaque(false);
         controls.setPreferredSize(new Dimension(300, 800)); 
-        add(controls, BorderLayout.WEST);
+        add(controls, BorderLayout.EAST);
 
+        // --- ADD THESE 4 LINES HERE ---
         revalidate();
         repaint();
+        // Force the board to draw players at tile 1 immediately
+        java.util.List<Integer> initialPos = new java.util.ArrayList<>();
+        for (game.engine.Player p : game.getPlayers()) initialPos.add(p.getPosition());
+        board.updatePositions(initialPos);
+        // -----------------------------
     }
 }

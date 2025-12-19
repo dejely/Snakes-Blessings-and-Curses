@@ -7,14 +7,10 @@ import game.ui.GameWindow;
  * All the Subsystems we made per packages(file sub directories)
  * As mentioned in Design Patterns: Facade
  */
-
 public class Main { 
 
 	static int size = 0;
-
-
 	public static void main(String[] args) {
-
 		new GameWindow();
 		
 	}
