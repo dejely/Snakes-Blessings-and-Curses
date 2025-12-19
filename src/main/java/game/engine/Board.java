@@ -79,7 +79,7 @@ public class Board {
      * Takes 1-based Board Numbers.
      */
     private void addLadder(int start, int end) {
-        placeTile(start, new Ladder(start , end));
+        placeTile(start, new Ladder(start - 1, end));
     }
 
     /**
@@ -87,6 +87,6 @@ public class Board {
      * Takes 1-based Board Numbers.
      */
     private void addSnake(int start, int end) {
-        placeTile(start, new Snake(start, end));
+        placeTile(start, new Snake(start - 1, end));
     }
 }

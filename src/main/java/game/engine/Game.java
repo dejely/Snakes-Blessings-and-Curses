@@ -106,13 +106,32 @@ public class Game {
         currentPlayer.onTurnEnd();
         
         // Semented Check (Link movement)
+     // --- SEMENTED LOGIC START ---
         if (currentPlayer.hasSemented && currentPlayer.sementedTarget != null) {
             Player target = currentPlayer.sementedTarget;
-            // logic to pull target closer or move them could go here
-            // For now, let's say they just copy the move next turn or similar.
-            // Or simpler: If I move X, they move X too (if implemented in requirements).
-            // Currently Semented is just a status tag in this engine version.
+            
+            // Check if the link is still valid (target exists and hasn't won yet)
+            if (target.getPosition() < 100) {
+                log.append("\n(Semented) The mystic bond tugs at ").append(target.getName()).append("...");
+
+                // FIX: Use 'finalMove' instead of 'steps'
+                try {
+                    // 1. Move the target by the same amount the current player moved
+                    Tile targetLandedTile = target.move(finalMove, board);
+                    log.append("\n   -> ").append(target.getName()).append(" was pulled ").append(finalMove).append(" steps!");
+    
+                    // 2. Apply effects for the target (e.g., if they are pulled onto a Snake)
+                    String effectMsg = targetLandedTile.applyEffect(target, this);
+                    if (!effectMsg.isEmpty()) {
+                        log.append(effectMsg);
+                    }
+    
+                } catch (OutofBoundsException | InvalidMoveException e) {
+                    log.append("\n   -> But ").append(target.getName()).append(" hit the wall!");
+                }
+            }
         }
+        // --- SEMENTED LOGIC END ---
 
         nextTurn();
         return log.toString();

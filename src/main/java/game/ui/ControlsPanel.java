@@ -18,6 +18,7 @@ public class ControlsPanel extends JPanel {
     private JLabel die1Label, die2Label; 
     private JButton rollButton;
     private Timer animationTimer; 
+    
 
     // Synchronized dice values
     private int officialDie1 = 1;
