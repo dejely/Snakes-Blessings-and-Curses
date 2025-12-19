@@ -1,229 +1,294 @@
 package game.ui;
 
-import game.engine.Dice;
-import game.engine.Game;
-import game.engine.Player;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.net.URL;
 import javax.swing.*;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
+import javax.swing.border.*;
+import game.engine.Dice;
+import game.engine.Game;
+import game.engine.Player;
 
 public class ControlsPanel extends JPanel {
-
     private GameWindow gameWindow;
     private BoardPanel boardPanel;
-    
-    // UI Components
     private JPanel playerListPanel; 
     private JTextArea historyArea;
     private JLabel die1Label, die2Label; 
     private JButton rollButton;
     private Timer animationTimer; 
 
+    // Synchronized dice values
+    private int officialDie1 = 1;
+    private int officialDie2 = 1;
+
+    // Theme Colors
+    private final Color OBSI_BLACK = new Color(20, 20, 22);
+    private final Color LAVA_ORANGE = new Color(230, 126, 34);
+    private final Color FIRE_RED = new Color(192, 57, 43);
+    private final Color TEXT_GOLD = new Color(241, 196, 15);
+
     public ControlsPanel(GameWindow window, BoardPanel board, int playerCount) {
         this.gameWindow = window;
         this.boardPanel = board;
         
-        setLayout(new BorderLayout(10, 10));
-        setBorder(new EmptyBorder(10, 10, 10, 10));
+        setOpaque(false);
+        setLayout(new BorderLayout(15, 15));
+        setBorder(new EmptyBorder(15, 15, 15, 15));
         
-        // --- 1. TOP: PLAYER INFO PANEL ---
+        // 1. TOP: PLAYER STATUS
         playerListPanel = new JPanel();
+        playerListPanel.setOpaque(false);
         playerListPanel.setLayout(new BoxLayout(playerListPanel, BoxLayout.Y_AXIS));
-        JScrollPane playerScroll = new JScrollPane(playerListPanel);
-        playerScroll.setPreferredSize(new Dimension(0, 200)); 
-        playerScroll.setBorder(new TitledBorder("Player Status"));
-        add(playerScroll, BorderLayout.NORTH);
+        JScrollPane pScroll = new JScrollPane(playerListPanel);
+        pScroll.setPreferredSize(new Dimension(0, 230)); 
+        pScroll.setOpaque(false);
+        pScroll.getViewport().setOpaque(false);
+        pScroll.setBorder(createRelicBorder("ASCENDANTS"));
+        add(pScroll, BorderLayout.NORTH);
 
-        // --- 2. CENTER: HISTORY LOG ---
+        // 2. CENTER: HISTORY
         historyArea = new JTextArea();
         historyArea.setEditable(false);
         historyArea.setLineWrap(true);
-        historyArea.setWrapStyleWord(true);
-        historyArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        historyArea.setText("--- GAME START ---\n");
+        historyArea.setBackground(new Color(30, 30, 35)); 
+        historyArea.setForeground(Color.WHITE);
+        historyArea.setFont(new Font("Dialog", Font.BOLD, 14));
+        historyArea.setMargin(new Insets(10, 10, 10, 10));
+        JScrollPane hScroll = new JScrollPane(historyArea);
+        hScroll.setOpaque(true);
+        hScroll.getViewport().setOpaque(true);
+        hScroll.setBorder(createRelicBorder("THE CHRONICLE"));
+        add(hScroll, BorderLayout.CENTER);
 
-        JScrollPane historyScroll = new JScrollPane(historyArea);
-        historyScroll.setBorder(new TitledBorder("Action History"));
-        historyScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        add(historyScroll, BorderLayout.CENTER);
+        // 3. BOTTOM: DICE & BUTTON
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setOpaque(false);
+        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
 
-        // --- 3. BOTTOM: DICE & CONTROLS ---
-        JPanel bottomPanel = new JPanel(new BorderLayout(10, 0));
-        bottomPanel.setBorder(new TitledBorder("Controls"));
-        bottomPanel.setPreferredSize(new Dimension(0, 120)); 
+        JPanel diceContainer = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        diceContainer.setOpaque(true); 
+        diceContainer.setBackground(new Color(25, 25, 30)); 
+        diceContainer.setBorder(new LineBorder(LAVA_ORANGE, 2));
 
-        // Dice Container 
-        JPanel diceContainer = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
-        
         die1Label = createDieLabel();
         die2Label = createDieLabel();
-        
         diceContainer.add(die1Label);
         diceContainer.add(die2Label);
         
-        // Wrapper for Title + Dice
-        JPanel diceWrapper = new JPanel(new BorderLayout());
-        JLabel diceTitle = new JLabel("Last Roll", SwingConstants.CENTER);
-        diceWrapper.add(diceTitle, BorderLayout.NORTH);
-        diceWrapper.add(diceContainer, BorderLayout.CENTER);
+        rollButton = new JButton("ROLL");
+        rollButton.setFont(new Font("Serif", Font.BOLD, 26));
+        rollButton.setBackground(FIRE_RED);
+        rollButton.setForeground(Color.WHITE);
+        rollButton.setAlignmentX(Component.CENTER_ALIGNMENT); 
+        rollButton.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(LAVA_ORANGE, 2), new EmptyBorder(10, 60, 10, 60)));
         
-        // Roll Button
-        rollButton = new JButton("Roll");
-        rollButton.setFont(new Font("Arial", Font.BOLD, 24));
-        rollButton.addActionListener(e -> startTurnSequence());
+        rollButton.addActionListener(e -> handleRollButtonClick());
 
-        bottomPanel.add(diceWrapper, BorderLayout.WEST);
-        bottomPanel.add(rollButton, BorderLayout.CENTER);
+        bottomPanel.add(diceContainer);
+        bottomPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        bottomPanel.add(rollButton);
         add(bottomPanel, BorderLayout.SOUTH);
         
-        // Initial Refresh
         refreshUI();
     }
-    
-    private JLabel createDieLabel() {
-        // Use a large font to make the Unicode characters look like graphics
-        // If the dice look like empty boxes, change "SansSerif" to "Segoe UI Symbol" or "Dialog"
-        JLabel lbl = new JLabel("\u2680", SwingConstants.CENTER); 
-        lbl.setFont(new Font("SansSerif", Font.PLAIN, 60)); 
-        lbl.setPreferredSize(new Dimension(70, 70));
-        lbl.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
-        lbl.setOpaque(true);
-        lbl.setBackground(Color.WHITE);
-        return lbl;
-    }
-    
-    // Helper to convert number 1-6 to Unicode Pips
-    private String getDicePips(int value) {
-        switch (value) {
-            case 1: return "\u2680"; 
-            case 2: return "\u2681"; 
-            case 3: return "\u2682"; 
-            case 4: return "\u2683"; 
-            case 5: return "\u2684"; 
-            case 6: return "\u2685"; 
-            default: return "?";
-        }
-    }
 
-    private void startTurnSequence() {
+    private void handleRollButtonClick() {
         Game game = gameWindow.getGame();
-        if (game == null || game.isGameOver()) return;
+        Player p = game.getCurrentPlayer();
         
-        Player current = game.getCurrentPlayer();
-        
-        // 1. Foretold Fate (Instant Input)
-        if (current.hasForetoldFate) {
+        if (p.hasForetoldFate) {
             String input = JOptionPane.showInputDialog(this, 
-                current.getName() + ": Foretold Fate! Choose steps (1-10):");
-            int forcedRoll = 1;
+                p.getName() + ", choose your steps (1-12):", "Foretold Fate", JOptionPane.PLAIN_MESSAGE);
             try {
-                forcedRoll = Integer.parseInt(input);
-            } catch (Exception ex) { forcedRoll = 1; }
-            
-            finalizeTurn(forcedRoll);
-            return;
+                int steps = Integer.parseInt(input);
+                if (steps >= 1 && steps <= 12) {
+                    // Manually set visual dice for prophesied move
+                    officialDie1 = steps / 2;
+                    officialDie2 = steps - officialDie1;
+                    die1Label.setText(getDicePips(officialDie1));
+                    die2Label.setText(getDicePips(officialDie2));
+                    finalizeTurn(steps); 
+                    return;
+                }
+            } catch (Exception e) { }
         }
+        startRollAnimation();
+    }
 
-        // 2. Normal Roll (Animation)
-        rollButton.setEnabled(false); 
+    private void startRollAnimation() {
+        rollButton.setEnabled(false);
         
+        // PRE-DETERMINE THE MOVE HERE
+        officialDie1 = Dice.rollSingleDie();
+        officialDie2 = Dice.rollSingleDie();
+        int totalMove = officialDie1 + officialDie2;
+
         long startTime = System.currentTimeMillis();
         animationTimer = new Timer(50, e -> {
-            // Scramble using Unicode Pips
+            // Visual "blur" during animation
             die1Label.setText(getDicePips(Dice.rollSingleDie()));
             die2Label.setText(getDicePips(Dice.rollSingleDie()));
             
-            if (System.currentTimeMillis() - startTime > 500) {
+            if (System.currentTimeMillis() - startTime > 600) {
                 ((Timer)e.getSource()).stop();
-                finalizeTurn(-1); 
+                
+                // LOCK IN THE VISUALS TO MATCH THE MOVE
+                die1Label.setText(getDicePips(officialDie1));
+                die2Label.setText(getDicePips(officialDie2));
+                
+                finalizeTurn(totalMove);
             }
         });
         animationTimer.start();
     }
 
-    private void finalizeTurn(int forcedRoll) {
+    private void finalizeTurn(int forcedMove) {
         Game game = gameWindow.getGame();
-        String turnLog = game.processTurn(forcedRoll);
+        Player current = game.getCurrentPlayer();
+        int start = current.getPosition();
         
-        historyArea.append(turnLog + "\n");
-        historyArea.setCaretPosition(historyArea.getDocument().getLength());
-        
-        refreshUI();
+        // Pass the pre-calculated total to the engine
+        String result = game.processTurn(forcedMove);
+        int end = current.getPosition();
 
-        if (game.isGameOver()) {
-            rollButton.setEnabled(false);
-            rollButton.setText("GAME OVER");
-            JOptionPane.showMessageDialog(this, "Game Over! " + game.getWinner().getName() + " Wins!");
-            gameWindow.returnToMenu();
-        } else {
-            rollButton.setEnabled(true);
+        historyArea.append("> " + result + "\n");
+        historyArea.setCaretPosition(historyArea.getDocument().getLength());
+
+        final int[] visualPos = {start};
+        Timer moveTimer = new Timer(100, e -> {
+            if (visualPos[0] < end) visualPos[0]++;
+            else if (visualPos[0] > end) visualPos[0]--;
+            
+            updateBoardPositions(game, current, visualPos[0]);
+
+            if (visualPos[0] == end) {
+                ((Timer)e.getSource()).stop();
+                refreshUI();
+                
+                if (game.isGameOver()) {
+                    showGameSummary(game);
+                    gameWindow.returnToMenu();
+                } else {
+                    rollButton.setEnabled(true);
+                }
+            }
+        });
+        moveTimer.start();
+    }
+
+    private void updateBoardPositions(Game g, Player active, int vPos) {
+        List<Integer> positions = new ArrayList<>();
+        for (Player p : g.getPlayers()) {
+            positions.add(p == active ? vPos : p.getPosition());
         }
+        boardPanel.updatePositions(positions);
     }
 
     private void refreshUI() {
         Game game = gameWindow.getGame();
         if (game == null) return;
-
-        // 1. Update Board
-        List<Integer> positions = new ArrayList<>();
-        for (Player p : game.getPlayers()) {
-            positions.add(p.getPosition());
-        }
-        boardPanel.updatePositions(positions);
-
-        // 2. Update Dice Pips
-        die1Label.setText(getDicePips(game.getLastDie1()));
-        die2Label.setText(getDicePips(game.getLastDie2()));
-
-        // 3. Update Player List
         playerListPanel.removeAll();
-        Player currentPlayer = game.getCurrentPlayer();
+        Player current = game.getCurrentPlayer();
+        Color[] pColors = {Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW};
+        List<Player> allPlayers = game.getPlayers();
 
-        for (Player p : game.getPlayers()) {
+        for (int i = 0; i < allPlayers.size(); i++) {
+            Player p = allPlayers.get(i);
+            Color playerColor = pColors[i % pColors.length];
+
             JPanel card = new JPanel(new BorderLayout());
+            card.setOpaque(true);
+            card.setBackground(p == current ? new Color(60, 45, 35) : new Color(40, 40, 45, 180));
             card.setBorder(new CompoundBorder(
-                BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                new LineBorder(p == current ? LAVA_ORANGE : Color.DARK_GRAY, 2), 
+                new EmptyBorder(5, 10, 5, 10)
             ));
 
-            if (p == currentPlayer) {
-                card.setBackground(new Color(220, 255, 220)); 
-                card.setBorder(new CompoundBorder(
-                    BorderFactory.createLineBorder(new Color(0, 150, 0), 2),
-                    BorderFactory.createEmptyBorder(4, 4, 4, 4)
-                ));
-            } else {
-                card.setBackground(Color.WHITE);
-            }
+            JLabel name = new JLabel(p.getName().toUpperCase());
+            name.setForeground(playerColor);
+            name.setFont(new Font("Serif", Font.BOLD, 14));
 
-            String statusText = "Position: " + p.getPosition();
-            
-            if (p.isShackled) statusText += " [SHACKLED]";
-            if (p.skipNextTurn) statusText += " [SKIP]";
-            if (p.hasForetoldFate) statusText += " [FORETOLD]";
-            if (p.hasSwitcheroo) statusText += " [SWITCH]";
-            if (p.danielBlessingTurns > 0) statusText += " [DANIEL]";
-            if (p.jacobsLadderCharges > 0) statusText += " [JACOB]";
+            JLabel status = new JLabel("TILE: " + p.getPosition() + " " + p.getStatusDisplay());
+            status.setFont(new Font("SansSerif", Font.PLAIN, 11));
+            status.setForeground(Color.LIGHT_GRAY);
 
-            JLabel nameLbl = new JLabel(p.getName(), SwingConstants.LEFT);
-            nameLbl.setFont(new Font("Arial", Font.BOLD, 14));
-            
-            JLabel statsLbl = new JLabel(statusText, SwingConstants.LEFT);
-            statsLbl.setFont(new Font("Arial", Font.PLAIN, 12));
-            if (statusText.contains("[")) statsLbl.setForeground(Color.RED);
-
-            card.add(nameLbl, BorderLayout.NORTH);
-            card.add(statsLbl, BorderLayout.SOUTH);
+            card.add(name, BorderLayout.NORTH);
+            card.add(status, BorderLayout.SOUTH);
             
             playerListPanel.add(card);
-            playerListPanel.add(Box.createRigidArea(new Dimension(0, 5))); 
+            playerListPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         }
-        
-        playerListPanel.revalidate();
+        playerListPanel.revalidate(); 
         playerListPanel.repaint();
+    }
+
+    private void showGameSummary(Game game) {
+        List<Player> standings = new ArrayList<>(game.getPlayers());
+        standings.sort((p1, p2) -> Integer.compare(p2.getPosition(), p1.getPosition()));
+
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBackground(new Color(25, 25, 30)); 
+        mainPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
+
+        try {
+            URL imgUrl = getClass().getResource("/GameEnd.png");
+            if (imgUrl != null) {
+                ImageIcon icon = new ImageIcon(imgUrl);
+                Image scaledImg = icon.getImage().getScaledInstance(420, 240, Image.SCALE_SMOOTH);
+                JLabel imageLabel = new JLabel(new ImageIcon(scaledImg));
+                imageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                mainPanel.add(imageLabel);
+                mainPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading victory image: " + e.getMessage());
+        }
+
+        StringBuilder summaryText = new StringBuilder("THE ASCENSION IS COMPLETE\n\n");
+        for (int i = 0; i < standings.size(); i++) {
+            Player p = standings.get(i);
+            String rank = (i == 0) ? "🏆 VICTOR: " : (i + 1) + ". ";
+            summaryText.append(rank).append(p.getName())
+                       .append(" — Tile ").append(p.getPosition()).append("\n");
+        }
+
+        JTextArea area = new JTextArea(summaryText.toString());
+        area.setFont(new Font("Serif", Font.BOLD, 18));
+        area.setForeground(TEXT_GOLD);
+        area.setBackground(new Color(35, 35, 40));
+        area.setEditable(false);
+        area.setMargin(new Insets(15, 15, 15, 15));
+        area.setBorder(new LineBorder(LAVA_ORANGE, 2));
+        
+        mainPanel.add(area);
+        JOptionPane.showMessageDialog(this, mainPanel, "The Chronicle Ends", JOptionPane.PLAIN_MESSAGE);
+    }
+
+    private JLabel createDieLabel() {
+        JLabel lbl = new JLabel("\u2680", SwingConstants.CENTER); 
+        lbl.setFont(new Font("SansSerif", Font.PLAIN, 60)); 
+        lbl.setPreferredSize(new Dimension(80, 80));
+        lbl.setOpaque(true); lbl.setBackground(Color.WHITE); 
+        lbl.setForeground(OBSI_BLACK);
+        lbl.setBorder(new LineBorder(LAVA_ORANGE, 2));
+        return lbl;
+    }
+
+    private String getDicePips(int v) {
+        return switch (v) {
+            case 1 -> "\u2680"; case 2 -> "\u2681"; case 3 -> "\u2682";
+            case 4 -> "\u2683"; case 5 -> "\u2684"; case 6 -> "\u2685";
+            default -> "?";
+        };
+    }
+
+    private TitledBorder createRelicBorder(String t) {
+        TitledBorder tb = BorderFactory.createTitledBorder(new LineBorder(LAVA_ORANGE, 1), t);
+        tb.setTitleColor(TEXT_GOLD); tb.setTitleFont(new Font("Serif", Font.BOLD, 13));
+        return tb;
     }
 }

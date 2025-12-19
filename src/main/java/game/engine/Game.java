@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class Game {
+import game.exceptions.InvalidMoveException;
+import game.exceptions.OutofBoundsException;
 
+public class Game {
     private Board board;
     private List<Player> players;
     private int currentPlayerIndex;
@@ -27,164 +29,162 @@ public class Game {
     }
 
     public List<Player> getPlayers() { return players; }
-    public Board getBoard() { return board; }
     public Player getCurrentPlayer() { return players.get(currentPlayerIndex); }
-    public Player getWinner() { return winner; }
     public boolean isGameOver() { return !gameRunning; }
-    
-    public int getLastDie1() { return lastDie1; }
-    public int getLastDie2() { return lastDie2; }
+    public Player getWinner() { return winner; }
 
     public String processTurn(int forcedRoll) {
-        if (!gameRunning) return "Game Over!";
+        Player currentPlayer = getCurrentPlayer();
+        StringBuilder log = new StringBuilder(currentPlayer.getName().toUpperCase() + ": ");
 
-        Player currentPlayer = players.get(currentPlayerIndex);
-        StringBuilder log = new StringBuilder();
-        
-        // --- UI: Add Status Effects to Log ---
-        String status = currentPlayer.getStatusDisplay();
-        log.append("[").append(currentPlayer.getName()).append("] ");
-        if (!status.isEmpty()) {
-            log.append(status).append(" ");
-        }
-
-        // 1. Check if Turn is Skipped
         if (currentPlayer.skipNextTurn) {
-            log.append("is skipping this turn!");
-            currentPlayer.skipNextTurn = false; 
-            
-            // Still need to decrement passive effects even if skipped?
-            // Usually yes, time passes.
-            decrementCounters(currentPlayer);
-            
+            currentPlayer.skipNextTurn = false;
+            log.append("Frozen! Skipping turn.");
             nextTurn();
             return log.toString();
         }
 
-        int steps;
-        
-        // 2. Determine Roll Steps
-        if (forcedRoll > 0) {
-            steps = forcedRoll; 
-            this.lastDie1 = steps / 2;
-            this.lastDie2 = steps - this.lastDie1;
+        try {
+            // --- VALIDATION LOGIC (Where InvalidMoveException is thrown) ---
             
-            log.append("uses Foretold Fate: ").append(steps);
-            currentPlayer.hasForetoldFate = false; 
-        } else {
-            // NORMAL ROLL
-            this.lastDie1 = Dice.rollSingleDie();
-            this.lastDie2 = Dice.rollSingleDie();
-            int rawSum = lastDie1 + lastDie2;
-            
-            // Apply Modifiers
-            steps = Dice.applyModifiers(rawSum, currentPlayer);
-            
-            // Log Logic
-            if (currentPlayer.whatAreTheOddsTurns > 0) {
-                 if (steps < 0) log.append("rolled Odd (").append(rawSum).append(") -> Backward ").append(Math.abs(steps));
-                 else log.append("rolled Even (").append(rawSum).append(") -> Forward ").append(steps);
-                 
-                 // Decrement the "What Are The Odds" counter specifically here because it was used
-                 currentPlayer.whatAreTheOddsTurns--;
-            } else if (currentPlayer.isShackled) {
-                 log.append("rolled ").append(rawSum).append(" (Shackled -2) -> ").append(steps);
-            } else {
-                 log.append("rolled ").append(rawSum);
+            // 1. Barred Heaven: Restricted movement
+            if (currentPlayer.barredHeavenTurns > 0 && forcedRoll > 10) {
+                throw new InvalidMoveException("BARRED HEAVEN: You cannot use Foretold Fate to jump more than 10 tiles while cursed!");
             }
+
+            // 2. Shackled: Limit choice
+            if (currentPlayer.isShackled && forcedRoll > 6) {
+                throw new InvalidMoveException("SHACKLED: Your chains are too heavy to choose a destiny that far!");
+            }
+
+            // 3. Game State: Cannot move if game is over
+            if (!gameRunning) {
+                throw new InvalidMoveException("THE CHRONICLE IS CLOSED: The game has already ended.");
+            }
+
+            // --- END VALIDATION ---
+
+            int roll;
+            if (currentPlayer.hasForetoldFate = true) {
+                roll = forcedRoll;
+                lastDie1 = forcedRoll / 2;
+                lastDie2 = forcedRoll - lastDie1;
+                currentPlayer.hasForetoldFate = false;
+                log.append("Invoked Foretold Fate: [ ").append(getDicePips(roll)).append(" ] (").append(roll).append(" steps)");
+            } else {
+                lastDie1 = Dice.rollSingleDie();
+                lastDie2 = Dice.rollSingleDie();
+                roll = Dice.applyModifiers(lastDie1 + lastDie2, currentPlayer);
+                log.append("Rolled ").append(Math.abs(roll));
+                if (roll < 0) log.append(" (Cursed Reverse!)");
+            }
+            decrementStatusEffects(currentPlayer);
+
+            int targetPos = currentPlayer.getPosition() + roll;
+
+            // OutofBoundsException trigger
+            if (targetPos > 100) {
+                throw new OutofBoundsException("The gates of Heaven are closed to this roll! Stay at " + currentPlayer.getPosition());
+            }
+            if (targetPos < 1) targetPos = 1;
+
+            currentPlayer.setPosition(targetPos);
+            log.append("\nMoved to tile ").append(currentPlayer.getPosition());
+
+            Tile landedTile = board.getTile(currentPlayer.getPosition() - 1);
+            String effectMsg = landedTile.applyEffect(currentPlayer, this);
+            log.append(effectMsg);
+
+            handleSementedEffect(currentPlayer, roll, log);
+
+            if (currentPlayer.hasSwitcheroo) {
+                handleSwitcheroo(currentPlayer, log);
+            }
+
+            if (currentPlayer.getPosition() == 100) {
+                winner = currentPlayer;
+                gameRunning = false;
+                log.append("\n*** ").append(currentPlayer.getName()).append(" HAS REACHED GLORY! ***");
+            }
+
+        } catch (InvalidMoveException e) {
+            // This is now reachable!
+            log.append("\n[!] INVALID ACTION: ").append(e.getMessage());
+            // We do NOT call nextTurn() here if you want them to try again, 
+            // OR we call it to punish the wasted attempt. Usually, in Foretold Fate, 
+            // we let them roll normally instead:
+            log.append("\nProphecy failed. Rolling naturally instead...");
+            return processTurn(-1); 
+
+        } catch (OutofBoundsException e) {
+            log.append("\n").append(e.getMessage());
         }
 
-        // 3. Move Player & Apply Tile Effect
-        Tile landedTile = currentPlayer.move(steps, board);
-        
-        if (landedTile != null) {
-            String effectMessage = landedTile.applyEffect(currentPlayer, this);
-            log.append(effectMessage);
-        }
-
-        // 4. Handle Special Movement Effects
-        handleSwitcheroo(currentPlayer, log);
-        handleSemented(currentPlayer, steps, log); 
-
-        // 5. Decrement Passive Duration Effects (Daniel's Blessing, Barred Heaven)
-        decrementCounters(currentPlayer);
-
-        // 6. Check Win Condition
-        if (currentPlayer.getPosition() >= board.getSize()) { 
-            log.append(" -> WINNER!!!");
-            winner = currentPlayer;
-            gameRunning = false;
-        } else {
-            nextTurn();
-        }
-
+        if (gameRunning) nextTurn();
         return log.toString();
     }
 
-    // Helper to lower turn counters
-    private void decrementCounters(Player player) {
-        if (player.danielBlessingTurns > 0) {
-            player.danielBlessingTurns--;
-        }
-        if (player.barredHeavenTurns > 0) {
-            player.barredHeavenTurns--;
+    // ... (rest of helper methods remain the same)
+    private void decrementStatusEffects(Player p) {
+        if (p.whatAreTheOddsTurns > 0) p.whatAreTheOddsTurns--;
+        if (p.barredHeavenTurns > 0) p.barredHeavenTurns--;
+        if (p.danielBlessingTurns > 0) p.danielBlessingTurns--;
+        if (p.sementedTurns > 0) p.sementedTurns--;
+    }
+
+    private void handleSementedEffect(Player source, int steps, StringBuilder log) {
+        if (source.hasSemented && source.sementedTarget != null && steps > 0) {
+            Player target = source.sementedTarget;
+            target.setPosition(target.getPosition() + steps);
+            log.append("\n(Bond) Pulling ").append(target.getName()).append(" to ").append(target.getPosition());
         }
     }
 
-    private void handleSemented(Player currentPlayer, int steps, StringBuilder log) {
-        // SCENARIO A: Back Player (Bonder)
-        if (currentPlayer.hasSemented && currentPlayer.sementedTarget != null) {
-            
-            if (currentPlayer.sementedTurns == 0) currentPlayer.sementedTurns = 3;
-
-            if (steps < 0) {
-                Player target = currentPlayer.sementedTarget;
-                int newTargetPos = target.getPosition() + steps; 
-                target.setPosition(newTargetPos);
-                log.append("\n(Semented) Stumbled back! Dragging ").append(target.getName())
-                   .append(" back to ").append(target.getPosition());
-            }
-
-            currentPlayer.sementedTurns--;
-            if (currentPlayer.sementedTurns <= 0) {
-                log.append("\n(Semented) The bond has broken.");
-                currentPlayer.hasSemented = false;
-                currentPlayer.sementedTarget = null;
-            }
-        }
-
-        // SCENARIO B: Ahead Player (Target)
-        for (Player p : players) {
-            if (p.hasSemented && p.sementedTarget == currentPlayer) {
-                if (steps > 0) {
-                    int newBackPos = p.getPosition() + steps;
-                    p.setPosition(newBackPos);
-                    log.append("\n(Semented) Surged forward! Pulling ").append(p.getName())
-                       .append(" up to ").append(p.getPosition());
-                }
-            }
+   private void handleSwitcheroo(Player p, StringBuilder log) {
+    // 1. Collect all players strictly ahead of the current player
+    List<Player> ahead = new ArrayList<>();
+    for (Player other : players) {
+        // Only add if they are further along AND not the current player
+        // Optional: Add '&& other.getPosition() < 100' if you don't want to swap with a winner
+        if (other != p && other.getPosition() > p.getPosition()) {
+            ahead.add(other);
         }
     }
 
-    private void handleSwitcheroo(Player player, StringBuilder log) {
-        if (!player.hasSwitcheroo) return;
+    // 2. If there are people ahead, pick ONE at random and swap
+    if (!ahead.isEmpty()) {
+        Player target = ahead.get(new Random().nextInt(ahead.size()));
+        
+        int myOldPos = p.getPosition();
+        int theirOldPos = target.getPosition();
 
-        List<Player> aheadPlayers = new ArrayList<>();
-        for (Player p : players) {
-            if (p.getPosition() > player.getPosition()) aheadPlayers.add(p);
-        }
+        p.setPosition(theirOldPos);
+        target.setPosition(myOldPos);
 
-        if (!aheadPlayers.isEmpty()) {
-            Player target = aheadPlayers.get(new Random().nextInt(aheadPlayers.size()));
-            int tempPos = player.getPosition();
-            player.setPosition(target.getPosition());
-            target.setPosition(tempPos);
-            log.append("\n(Switcheroo) Swapped with ").append(target.getName()).append("!");
-        }
-        player.hasSwitcheroo = false; 
+        log.append("\n(Switcheroo) Fate intervened! You swapped places with ")
+           .append(target.getName())
+           .append(" (Tile ").append(theirOldPos).append(" <-> ").append(myOldPos).append(").");
+    } else {
+        log.append("\n(Switcheroo) You are already leading the pack; there is no one ahead to swap with.");
     }
+
+    // 3. Always consume the effect
+    p.hasSwitcheroo = false;
+}
 
     private void nextTurn() {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
     }
+
+     private String getDicePips(int v) {
+                return switch (v) {
+                    case 1 -> "\u2680";
+                    case 2 -> "\u2681";
+                    case 3 -> "\u2682"; 
+                    case 4 -> "\u2683"; 
+                    case 5 -> "\u2684";
+                    case 6 -> "\u2685"; 
+                    default -> "?";
+                };
+            }
 }

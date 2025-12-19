@@ -3,6 +3,8 @@ package game.engine;
 import java.util.ArrayList;
 import java.util.List;
 
+import game.exceptions.OutofBoundsException;
+
 public class Player {
 
     private String name;
@@ -42,21 +44,22 @@ public class Player {
     }
 
     // Moves player and returns the Tile they landed on
-    public Tile move(int roll, Board board) {
-        int newPos = position + roll;
-        
-        if (newPos > board.getSize()) {
-            newPos = board.getSize(); 
-        }
-        
-        this.position = newPos;
+    public Tile move(int roll, Board board) throws OutofBoundsException {
+    int newPos = position + roll;
 
-        // Convert 1-based Board Number to 0-based Array Index
-        if (position > 0) {
-            return board.getTile(position - 1);
-        }
-        return null;
+    // THROW the exception if they go too far
+    if (newPos > board.getSize()) {
+        this.position = board.getSize(); // We still move them to the end
+        throw new OutofBoundsException("Player tried to move past " + board.getSize());
     }
+
+    this.position = newPos;
+
+    if (position > 0) {
+        return board.getTile(position - 1);
+    }
+    return null;
+}
 
     public void applyAllCurses() {
         whatAreTheOddsTurns = 2; // Fixed: Set to 2 turns
@@ -87,4 +90,5 @@ public class Player {
         if (statusList.isEmpty()) return "";
         return "[" + String.join("] [", statusList) + "]";
     }
+    
 }

@@ -6,7 +6,6 @@ public abstract class Tile {
 
     public Tile(int index, TileType type) {
         this.index = index;
-        this.type = type;
     }
 
     public int getIndex() { return index; }
