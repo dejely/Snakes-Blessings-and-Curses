@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
-    private final Tile[] tiles = new Tile[100];
 
     private final List<Tile> tiles;
     private final int size;
@@ -37,8 +36,7 @@ public class Board {
     // Needs fixing
     private void setupFixedTiles() {
         // --- BLESSINGS ---
-        // Note: Removed 94 from here as it conflicts with the Curse at 94
-        int[] blessingLocs = {4, 16, 19, 21, 35, 40, 41, 50, 53, 57, 61, 69, 71, 74, 80, 85, 86, 98};
+        int[] blessingLocs = {4, 16, 19, 30, 35, 40, 41, 50, 53, 57, 62 , 70, 71, 74, 80, 85, 86, 94, 98};
         
         for (int loc : blessingLocs) {
             // We pass (loc - 1) to the constructor so the Tile knows its 0-based index
@@ -46,26 +44,25 @@ public class Board {
         }
 
         // --- CURSES ---
-        // 94 is kept here (it will be a Curse)
-        int[] curseLocs = {10, 14, 22, 29, 36, 48, 60, 66, 78, 83, 89, 93};
+        int[] curseLocs = {10, 14, 22, 29, 36, 43, 60, 65, 78, 82, 88, 93};
         
         for (int loc : curseLocs) {
             placeTile(loc, new Curse(loc - 1));
         }
 
         // --- LADDERS ---
-        addLadder(6, 26);
-        addLadder(23, 42);
+        addLadder(6, 25);
+        addLadder(28, 49);
         addLadder(39, 58);
-        addLadder(44, 54);
-        addLadder(63, 72);
-        addLadder(67, 78);
+        addLadder(47, 54);
+        addLadder(64, 83);
+        addLadder(68, 89);
 
         // --- SNAKES ---   
-        addSnake(24, 7);
-        addSnake(47, 27); 
+        addSnake(27, 7);
+        addSnake(44, 24); 
         addSnake(73, 52);
-        addSnake(97, 75);
+        addSnake(97, 76);
     }
 
     /**
@@ -77,14 +74,12 @@ public class Board {
             tiles.set(tileNumber - 1, tile);
         }
     }
-
     /**
      * Syntactic sugar to make adding Ladders readable.
      * Takes 1-based Board Numbers.
      */
     private void addLadder(int start, int end) {
-        // We calculate (start - 1) and (end - 1) here to keep the setup method clean
-        placeTile(start, new Ladder(start - 1, end - 1));
+        placeTile(start, new Ladder(start , end));
     }
 
     /**
@@ -92,6 +87,6 @@ public class Board {
      * Takes 1-based Board Numbers.
      */
     private void addSnake(int start, int end) {
-        placeTile(start, new Snake(start - 1, end - 1));
+        placeTile(start, new Snake(start, end));
     }
 }

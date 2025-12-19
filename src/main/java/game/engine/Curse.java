@@ -6,14 +6,15 @@ public class Curse extends Tile {
 
     private final CurseType curseType;
 
-    public Curse(int index, CurseType curseType) {
-        super(index, TileType.CURSE);
-        this.curseType = curseType;
-    }
-
+    // Fix: Added a constructor that picks a random curse type automatically
     public Curse(int index) {
         super(index, TileType.CURSE);
         this.curseType = randomType();
+    }
+
+    public Curse(int index, CurseType curseType) {
+        super(index, TileType.CURSE);
+        this.curseType = curseType;
     }
 
     private CurseType randomType() {
@@ -23,37 +24,36 @@ public class Curse extends Tile {
 
     @Override
     public String applyEffect(Player player, Game game) {
-        // 1. Check for Jacob's Ladder
+        // Check if player has Jacob’s Ladder blessing first
         if (player.jacobsLadderCharges > 0) {
             player.jacobsLadderCharges--;
-            return " -> Landed on CURSE " + curseType + ", but Jacob's Ladder nullified it!";
+            return " -> Landed on CURSE (" + curseType + "), but Jacob's Ladder protected you!";
         }
 
-        StringBuilder msg = new StringBuilder();
-        msg.append(" -> Landed on CURSE: ").append(curseType).append("! ");
+        String msg = " -> OH NO! Cursed by " + curseType + ".";
 
         switch (curseType) {
             case WHAT_ARE_THE_ODDS -> {
-                player.whatAreTheOddsTurns = 2; // Set duration to 2 turns
-                msg.append("\n(What are the odds?) Next 2 rolls: Even = Forward, Odd = Backward.");
+                player.whatAreTheOddsTurns = 3; // Fixed variable name
+                msg += " (Must roll EVEN to move forward for 3 turns)";
             }
             case BARRED_HEAVEN -> {
                 player.barredHeavenTurns = 3;
-                msg.append("\n(Barred Heaven) For the next 3 turns, ladders won't move you up.");
+                msg += " (Ladders are blocked for 3 turns)";
             }
             case UNMOVABLE_MAN -> {
                 player.skipNextTurn = true;
-                msg.append("\n(Unmovable Man) Your next turn is given up to the player in last place.");
+                msg += " (You are frozen for the next turn)";
             }
             case PILLAR_OF_SALT -> {
                 player.hasPillarOfSalt = true;
-                msg.append("\n(Pillar of Salt) You are cursed. You will lose a turn if eaten by a snake.");
+                msg += " (If you hit a snake next, you turn to stone)";
             }
             case JOBS_SUFFERING -> {
                 player.applyAllCurses();
-                msg.append("\n(Job's Suffering) ALL curses applied to you!");
+                msg += " (You suffer from EVERYTHING!)";
             }
         }
-        return msg.toString();
+        return msg;
     }
 }

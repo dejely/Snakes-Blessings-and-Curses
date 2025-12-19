@@ -13,15 +13,22 @@ public class BoardPanel extends JPanel {
 
     public BoardPanel() {
         this.playerPositions = Collections.emptyList();
+        setOpaque(false); // Important for the background to show through if needed
         
         // --- LOAD THE IMAGE ---
-        // Since the image is in src/main/java (root), we use the system class loader
         try {
+            // Try loading from root (standard for src/main/resources)
             URL imgUrl = ClassLoader.getSystemResource("BoardPanel1.png");
+            
+            if (imgUrl == null) {
+                // Fallback: Try loading relative to class
+                imgUrl = getClass().getResource("/BoardPanel1.png");
+            }
+            
             if (imgUrl != null) {
                 this.boardImage = new ImageIcon(imgUrl).getImage();
             } else {
-                System.err.println("Error: BoardPanel1.png not found in classpath!");
+                System.err.println("Error: BoardPanel1.png not found! Make sure it is in your source folder.");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -43,18 +50,14 @@ public class BoardPanel extends JPanel {
         if (boardImage != null) {
             g.drawImage(boardImage, 0, 0, w, h, this);
         } else {
-            // Fallback if image missing
+            // Fallback if image fails
             g.setColor(Color.LIGHT_GRAY);
             g.fillRect(0, 0, w, h);
-            g.setColor(Color.BLACK);
-            g.drawString("Image missing: BoardPanel1.png", 20, 20);
+            g.setColor(Color.RED);
+            g.drawString("Image Not Found: BoardPanel1.png", 10, 20);
         }
 
         // 2. Draw Players
-        drawPlayers(g, w, h);
-    }
-
-    private void drawPlayers(Graphics g, int w, int h) {
         if (playerPositions.isEmpty()) return;
         
         int cellW = w / 10;
@@ -72,7 +75,7 @@ public class BoardPanel extends JPanel {
             int rowFromBottom = (tileId - 1) / 10;
             int col = (tileId - 1) % 10;
             
-            // Even rows go Right, Odd rows go Left
+            // Even rows go Right (1-10), Odd rows go Left (20-11)
             if (rowFromBottom % 2 == 1) {
                 col = 9 - col;
             }
