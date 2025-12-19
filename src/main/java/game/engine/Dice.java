@@ -1,58 +1,59 @@
 package game.engine;
 
 import java.util.Random;
-import java.util.Scanner;
 
+/**
+ * Utility class for handling all dice-related logic.
+ */
 public class Dice {
-	
-    private static final Random rand = new Random();
-    private static final Scanner sc = new Scanner(System.in);
+    private static final Random random = new Random();
 
     /**
-     * Roll the dice for a given player
-     * @param player The player rolling the dice
-     * @return modified roll based on curses/blessings
+     * Rolls a single 6-sided die.
+     * Used by the engine for standard turns and the UI for animation blurs.
+     * @return A random integer between 1 and 6.
      */
-    public static int DiceRollRNG(Player player) {
-        int roll = rand.nextInt(6) + 1; // 1–6
-		roll = player  != null ? CheckProperties(roll, player) : roll; //If player innit null, run condition
-        return roll;
+    public static int rollSingleDie() {
+        return random.nextInt(6) + 1;
     }
 
-    public static int CheckProperties(int roll, Player player) {     // player effects
-    	
-    	if (player == null) return roll; //returns if player is null
-
-        if (player.hasWhatAreTheOdds) { // What Are The Odds?
-            if (roll % 2 == 0) {
-                System.out.println(player.getName() + " rolled " + roll + " (even) → move forward");
-                return roll;      // even -> move forward
+    /**
+     * Rolls two 6-sided dice and returns the total.
+     * @return A random integer between 2 and 12.
+     */
+    public static int rollTwoDice() {
+        return rollSingleDie() + rollSingleDie();
+    }
+    public static int applyModifiers(int rollSum, Player player) {
+        // 1. What Are The Odds? (Active if counter > 0)
+        if (player.whatAreTheOddsTurns > 0) { 
+            if (rollSum % 2 == 0) {
+                // Even = Forward
+                return rollSum; 
             } else {
-                System.out.println(player.getName() + " rolled " + roll + " (odd) → move backward");
-                return -roll;     // odd -> move backward
+                // Odd = Backward
+                return -rollSum;
             }
         }
-        if (player.hasForetoldFate) { // Foretold Fate
-            int steps;
-            while (true) {
-                System.out.print("Enter a number from 1–10: ");
-                try {
-                    steps = Integer.parseInt(sc.nextLine().trim());
-                    if (steps < 1 || steps > 10) {
-                        System.out.println("Number must be 1–10!");
-                        continue;
-                    }
-                    return steps;
-                } catch (NumberFormatException e) {
-                    System.out.println("Invalid number!");
-                }
-            }
+
+        // 2. Shackled
+        if (player.isShackled) {
+            int newRoll = Math.max(0, rollSum - 2);
+            player.isShackled = false; 
+            return newRoll;
         }
-        if (player.hasShackled) {// Shackled
-            int newRoll = Math.max(0, roll - 2);
-            System.out.println(player.getName() + " is shackled! Roll reduced from " + roll + " → " + newRoll);
-        }
-        return roll;
+
+        return rollSum;
+    }
+    public static String getDicePips(int value) {
+        return switch (value) {
+            case 1 -> "\u2680"; // ⚀
+            case 2 -> "\u2681"; // ⚁
+            case 3 -> "\u2682"; // ⚂
+            case 4 -> "\u2683"; // ⚃
+            case 5 -> "\u2684"; // ⚄
+            case 6 -> "\u2685"; // ⚅
+            default -> "?";
+        };
     }
 }
-

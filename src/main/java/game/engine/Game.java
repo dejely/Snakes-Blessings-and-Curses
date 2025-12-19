@@ -30,7 +30,7 @@ public class Game {
     public boolean isGameOver() { return !gameRunning; }
     public Player getWinner() { return winner; }
 
-    public String processTurn(int forcedRoll) {
+    public String processTurn(int forcedRoll, boolean isFate) {
         Player currentPlayer = getCurrentPlayer();
         StringBuilder log = new StringBuilder(currentPlayer.getName().toUpperCase() + ": ");
 
@@ -46,43 +46,25 @@ public class Game {
             if (currentPlayer.hasForetoldFate && currentPlayer.barredHeavenTurns > 0 && forcedRoll > 10) {
                 throw new InvalidMoveException("BARRED HEAVEN: You cannot jump more than 10 tiles!");
             }
-<<<<<<< Updated upstream
 
             // 2. Shackled: Limit choice
             if (currentPlayer.isShackled && forcedRoll > 6) {
                 throw new InvalidMoveException("SHACKLED: Your chains are too heavy to choose a destiny that far!");
-=======
-            if (currentPlayer.hasShackled && forcedRoll > 6) {
-                throw new InvalidMoveException("SHACKLED: Chains are too heavy to move that far!");
->>>>>>> Stashed changes
             }
             if (!gameRunning) {
                 throw new InvalidMoveException("THE CHRONICLE IS CLOSED.");
             }
 
-<<<<<<< Updated upstream
             // --- END VALIDATION ---
-
+            int lastDie1 = 1;
+            int lastDie2 = 1;
             int roll;
             if (currentPlayer.hasForetoldFate = true) {
                 roll = forcedRoll;
                 lastDie1 = forcedRoll / 2;
                 lastDie2 = forcedRoll - lastDie1;
                 currentPlayer.hasForetoldFate = false;
-                log.append("Invoked Foretold Fate: [ ").append(getDicePips(roll)).append(" ] (").append(roll).append(" steps)");
-=======
-            // --- MOVEMENT CALCULATION ---
-            int roll;
-            if (forcedRoll != -1) {
-                // Use the roll sent from the UI (Standard or Foretold Fate)
-                roll = Dice.applyModifiers(forcedRoll, currentPlayer);
-                if (currentPlayer.hasForetoldFate) {
-                    log.append("Invoked Foretold Fate: (").append(forcedRoll).append(" steps)");
-                    currentPlayer.hasForetoldFate = false;
-                } else {
-                    log.append("Rolled ").append(forcedRoll);
-                }
->>>>>>> Stashed changes
+                log.append("Invoked Foretold Fate: [ ").append(Dice.getDicePips(roll)).append(" ] (").append(roll).append(" steps)");
             } else {
                 // Fallback for logic-driven turns
                 int d1 = Dice.rollSingleDie();
@@ -125,7 +107,7 @@ public class Game {
         } catch (InvalidMoveException e) {
             log.append("\n[!] INVALID ACTION: ").append(e.getMessage());
             log.append("\nProphecy failed. Rolling naturally instead...");
-            return processTurn(-1); // Recursive call for a natural roll
+            return processTurn(-1, false); // Recursive call for a natural roll
         } catch (OutofBoundsException e) {
             log.append("\n").append(e.getMessage());
         }

@@ -1,33 +1,21 @@
 package game.engine;
 
 public abstract class Tile {
-    protected final int index;
-    protected final TileType type;
+    protected int index;
+    protected TileType type;
 
-    // Constructor accepts both index and type
+    public enum TileType { NORMAL, SNAKE, LADDER, BLESSING, CURSE }
+
     public Tile(int index, TileType type) {
         this.index = index;
+        this.type = type;
     }
 
-    public int getIndex() {
-        return index;
-    }
-
-    public TileType getType() {
-        return type;
-    }
-
-    // All tiles define their own effect
-    public abstract void applyEffect(Player player);
-}
-
-class NormalTile extends Tile {
-    public NormalTile(int index) {
-        super(index, TileType.NORMAL);
-    }
-
-    @Override
-    public void applyEffect(Player player) {
-        System.out.println(player.getName() + " landed on a normal tile.");
-    }
+    /**
+     * @return Narrative string for the Chronicle log.
+     */
+    public abstract String applyEffect(Player player, Game game);
+    
+    public int getIndex() { return index; }
+    public TileType getType() { return type; }
 }
