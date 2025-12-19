@@ -11,14 +11,16 @@ public class Player {
     private int position = 1;
 
     // --- CURSES ---
+    // CHANGED: boolean -> int (to track the 2 turns duration)
     public int whatAreTheOddsTurns = 0; 
+    
     public int barredHeavenTurns = 0;
     public boolean skipNextTurn = false;
     public boolean hasPillarOfSalt = false;
     
     // --- BLESSINGS / STATUS EFFECTS ---
     public boolean hasForetoldFate = false;
-    public boolean isShackled = false; 
+    public boolean isShackled = false; // DEBUFF: -2 to roll
     public boolean hasSwitcheroo = false;
     public int jacobsLadderCharges = 0;
     public int danielBlessingTurns = 0;
@@ -41,46 +43,35 @@ public class Player {
         this.position = position;
     }
 
-    public Tile move(int steps, Board board) throws OutofBoundsException, game.exceptions.InvalidMoveException {
-        int newPos = position + steps;
-        
-        if (newPos > board.getSize()) {
-            throw new OutofBoundsException(name + " tried to move past " + board.getSize());
-        }
+    // Moves player and returns the Tile they landed on
+    public Tile move(int roll, Board board) throws OutofBoundsException {
+    int newPos = position + roll;
 
-        this.position = newPos;
-
-        if (position > 0) {
-            return board.getTile(position - 1);
-        }
-        return null;
+    // THROW the exception if they go too far
+    if (newPos > board.getSize()) {
+        this.position = board.getSize(); // We still move them to the end
+        throw new OutofBoundsException("Player tried to move past " + board.getSize());
     }
 
+    this.position = newPos;
+
+    if (position > 0) {
+        return board.getTile(position - 1);
+    }
+    return null;
+}
+
     public void applyAllCurses() {
-        whatAreTheOddsTurns = 2; 
+        whatAreTheOddsTurns = 2; // Fixed: Set to 2 turns
         barredHeavenTurns = 3;
         skipNextTurn = true;
         hasPillarOfSalt = true;
     }
 
     /**
-     * Decrements counters for all active effects.
-     * Called by Game.java at the end of every turn.
+     * Generates the UI string for active effects.
+     * Example output: "[Barred Heaven: 2] [Shackled]"
      */
-    public void onTurnEnd() {
-        if (whatAreTheOddsTurns > 0) whatAreTheOddsTurns--;
-        if (barredHeavenTurns > 0) barredHeavenTurns--;
-        if (danielBlessingTurns > 0) danielBlessingTurns--;
-        
-        if (sementedTurns > 0) {
-            sementedTurns--;
-            if (sementedTurns == 0) {
-                hasSemented = false;
-                sementedTarget = null;
-            }
-        }
-    }
-
     public String getStatusDisplay() {
         List<String> statusList = new ArrayList<>();
 
@@ -92,9 +83,12 @@ public class Player {
         
         if (skipNextTurn) statusList.add("Frozen");
         if (isShackled) statusList.add("Shackled");
-        if (hasForetoldFate) statusList.add("Foretold Fate");
         if (hasPillarOfSalt) statusList.add("Pillar of Salt");
+        if (hasForetoldFate) statusList.add("Foretold Fate");
+        if (hasSwitcheroo) statusList.add("Switcheroo Ready");
 
-        return statusList.isEmpty() ? "" : String.join(", ", statusList);
+        if (statusList.isEmpty()) return "";
+        return "[" + String.join("] [", statusList) + "]";
     }
+    
 }

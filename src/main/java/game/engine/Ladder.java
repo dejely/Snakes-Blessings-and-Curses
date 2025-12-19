@@ -21,10 +21,16 @@ public class Ladder extends Tile {
 
         player.setPosition(climbTo);
         
+<<<<<<< HEAD
 
         // FIX: We add +1 here so the text matches the visual board numbers (1-100)
         // Previous code printed 'climbTo', which was the 0-based index (e.g., 51 instead of 52).
         return " -> LADDER! Climbed up to " + (climbTo + 1) + ".";
 
+=======
+        // FIX: We add +1 here so the text matches the visual board numbers (1-100)
+        // Previous code printed 'climbTo', which was the 0-based index (e.g., 51 instead of 52).
+        return " -> LADDER! Climbed up to " + (climbTo) + ".";
+>>>>>>> parent of 13753cd (Fix game crashes, implement Semented logic, and polish Game End UI)
     }
 }
