@@ -153,24 +153,51 @@ public class ControlsPanel extends JPanel {
 
     private void finishVisualTurn(String result) {
         Game game = gameWindow.getGame();
-        Player current = game.getPlayers().get((game.getPlayers().indexOf(game.getCurrentPlayer()) + game.getPlayers().size() - 1) % game.getPlayers().size());
-        // Note: The engine already moved the player and switched the 'current' index.
-        // We just need to animate the movement now.
+        // We need the player who just moved
+        // Since processTurn already called nextTurn(), the 'active' player is 
+        // actually the one before the current index.
+        int previousIndex = (game.getPlayers().indexOf(game.getCurrentPlayer()) + game.getPlayers().size() - 1) % game.getPlayers().size();
+        Player movingPlayer = game.getPlayers().get(previousIndex);
         
+        // 1. Log the result
         historyArea.append("> " + result + "\n");
         historyArea.setCaretPosition(historyArea.getDocument().getLength());
 
-        // Simple refresh to show the piece at the final spot
-        // (Or you can keep your moveTimer logic if you want the walking animation)
-        refreshUI();
-        boardPanel.updatePositions(game.getPlayers().stream().map(Player::getPosition).toList());
+        // 2. Setup the "Walking" Animation
+        // We need to know where they started. Since the engine already moved them, 
+        // we calculate the 'start' by subtracting the roll from their current pos.
+        int endPos = movingPlayer.getPosition();
+        int rollAmount = game.getLastDie1() + game.getLastDie2();
+        int startPos = endPos - rollAmount; 
+
+        final int[] visualPos = {startPos};
         
-        if (game.isGameOver()) {
-            showGameEnd();
-            gameWindow.returnToMenu();
-        } else {
-            rollButton.setEnabled(true);
-        }
+        Timer moveTimer = new Timer(150, e -> {
+            if (visualPos[0] < endPos) {
+                visualPos[0]++;
+            } else if (visualPos[0] > endPos) {
+                visualPos[0]--;
+            }
+
+            // Update the board visually
+            updateBoardPositions(game, movingPlayer, visualPos[0]);
+
+            // When the "walk" is finished
+            if (visualPos[0] == endPos) {
+                ((Timer)e.getSource()).stop();
+                refreshUI(); // Update the sidebar text
+                
+                if (game.isGameOver()) {
+                    showGameEnd();
+                    gameWindow.returnToMenu();
+                } else {
+                    // Check for your Semented interaction now that movement is done
+                    checkForSementedInteraction(movingPlayer, game);
+                    rollButton.setEnabled(true);
+                }
+            }
+        });
+        moveTimer.start();
     }
 
     private void finalizeTurn(int forcedMove) {
