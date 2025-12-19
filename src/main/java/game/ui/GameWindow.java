@@ -40,7 +40,7 @@ public class GameWindow extends JFrame {
         // Basic Window Settings
         setResizable(false);
         setSize(1100, 850); 
-        setLocationRelativeTo(null); // Center on screen
+        setLocationRelativeTo(null); 
         setVisible(true);
     }
 
