@@ -49,7 +49,6 @@ public class Game {
         // --- DICE ROLL ---
         int d1, d2;
         
-        // FIX APPLIED HERE: changed (= true) to just (currentPlayer.hasForetoldFate)
         if (currentPlayer.hasForetoldFate) {
             // Player chooses the outcome (passed via forcedRoll)
             // We split it visually for the UI, though logic just uses the sum
@@ -81,7 +80,7 @@ public class Game {
             log.append("Modified to ").append(finalMove).append(". ");
         }
 
-        // --- MOVEMENT ---
+        
         try {
             Tile landedTile = currentPlayer.move(finalMove, board);
             
@@ -115,7 +114,7 @@ public class Game {
             if (target.getPosition() < 100) {
                 log.append("\n(Semented) The mystic bond tugs at ").append(target.getName()).append("...");
 
-                // FIX: Use 'finalMove' instead of 'steps'
+                
                 try {
                     // 1. Move the target by the same amount the current player moved
                     Tile targetLandedTile = target.move(finalMove, board);

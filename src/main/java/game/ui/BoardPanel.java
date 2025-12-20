@@ -15,7 +15,7 @@ public class BoardPanel extends JPanel {
         this.playerPositions = Collections.emptyList();
         setOpaque(false); // Important for the background to show through if needed
         
-        // --- LOAD THE IMAGE ---
+      
         try {
             // Try loading from root (standard for src/main/resources)
             URL imgUrl = ClassLoader.getSystemResource("BoardPanel1.png");

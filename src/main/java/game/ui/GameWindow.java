@@ -94,13 +94,12 @@ public class GameWindow extends JFrame {
         controls.setPreferredSize(new Dimension(300, 800)); 
         add(controls, BorderLayout.EAST);
 
-        // --- ADD THESE 4 LINES HERE ---
         revalidate();
         repaint();
         // Force the board to draw players at tile 1 immediately
         java.util.List<Integer> initialPos = new java.util.ArrayList<>();
         for (game.engine.Player p : game.getPlayers()) initialPos.add(p.getPosition());
         board.updatePositions(initialPos);
-        // -----------------------------
+       
     }
 }

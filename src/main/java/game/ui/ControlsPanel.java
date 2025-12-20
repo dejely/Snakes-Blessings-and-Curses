@@ -123,7 +123,7 @@ public class ControlsPanel extends JPanel {
         Game game = gameWindow.getGame();
         
         // 1. Let the engine process the turn FIRST. 
-        // We pass 0 because it's a normal roll (not forced).
+     
         String result = game.processTurn(0); 
         
         // 2. Get the ACTUAL dice values that the engine just used.
@@ -155,8 +155,7 @@ public class ControlsPanel extends JPanel {
     private void finishVisualTurn(String result) {
         Game game = gameWindow.getGame();
         // We need the player who just moved
-        // Since processTurn already called nextTurn(), the 'active' player is 
-        // actually the one before the current index.
+        
         int previousIndex = (game.getPlayers().indexOf(game.getCurrentPlayer()) + game.getPlayers().size() - 1) % game.getPlayers().size();
         Player movingPlayer = game.getPlayers().get(previousIndex);
         
@@ -165,8 +164,7 @@ public class ControlsPanel extends JPanel {
         historyArea.setCaretPosition(historyArea.getDocument().getLength());
 
         // 2. Setup the "Walking" Animation
-        // We need to know where they started. Since the engine already moved them, 
-        // we calculate the 'start' by subtracting the roll from their current pos.
+   
         int endPos = movingPlayer.getPosition();
         int rollAmount = game.getLastDie1() + game.getLastDie2();
         int startPos = endPos - rollAmount; 
@@ -264,9 +262,9 @@ public class ControlsPanel extends JPanel {
                 List<Player> sortedPlayers = new ArrayList<>(gameWindow.getGame().getPlayers());
                 sortedPlayers.sort((p1, p2) -> Integer.compare(p2.getPosition(), p1.getPosition()));
 
-                // --- ADJUSTED ALIGNMENT VALUES ---
+
                 int leftMargin = 140; 
-                // MOVED UP: Starts at 360 to align with the Top (Gold) Slot
+
                 int currentY = 360;  
                 int spacing = 100;   
 

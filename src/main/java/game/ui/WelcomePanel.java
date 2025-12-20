@@ -26,7 +26,7 @@ public class WelcomePanel extends JPanel {
 
         setLayout(new GridBagLayout());
 
-        // FIX: Create a panel that handles transparency correctly
+        // Create a panel that handles transparency correctly
         JPanel card = new JPanel(new GridBagLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
